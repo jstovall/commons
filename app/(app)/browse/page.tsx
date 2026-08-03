@@ -2,6 +2,13 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { toggleFavorite, addComment, requestLoan } from "@/app/actions";
 
+const statusStampClass: Record<string, string> = {
+  available: "commons-stamp commons-stamp-teal",
+  requested: "commons-stamp commons-stamp-brick",
+  checked_out: "commons-stamp commons-stamp-brick",
+  unavailable: "commons-stamp",
+};
+
 export default async function BrowsePage({
   searchParams,
 }: {
@@ -36,41 +43,40 @@ export default async function BrowsePage({
   const { data: items, error: itemsError } = await query;
   if (itemsError) console.error("Browse query error:", itemsError);
 
-const { data: favorites } = await supabase
-  .from("favorites")
-  .select("item_id")
-  .eq("user_id", user.id);
+  const { data: favorites } = await supabase
+    .from("favorites")
+    .select("item_id")
+    .eq("user_id", user.id);
+  const favoriteIds = new Set(
+    ((favorites ?? []) as { item_id: string }[]).map((f) => f.item_id)
+  );
 
-const favoriteIds = new Set(
-  ((favorites ?? []) as { item_id: string }[]).map((f) => f.item_id)
-);
-
-const { data: myLoans } = await supabase
-  .from("loans")
-  .select("id, item_id, status")
-  .eq("borrower_id", user.id);
-const myLoanMap = new Map(
-  (myLoans ?? []).map((l) => [l.item_id, { id: l.id, status: l.status }])
-);
+  const { data: myLoans } = await supabase
+    .from("loans")
+    .select("id, item_id, status")
+    .eq("borrower_id", user.id);
+  const myLoanMap = new Map(
+    ((myLoans ?? []) as { id: string; item_id: string; status: string }[]).map(
+      (l) => [l.item_id, { id: l.id, status: l.status }]
+    )
+  );
 
   return (
     <div>
-      <h2 className="mb-4 text-xl font-semibold text-commons-dark">
-        Available to Borrow
-      </h2>
+      <h2 className="commons-heading mb-4 text-3xl">Available to borrow</h2>
 
-      <form className="mb-6 flex gap-2" action="/browse">
+      <form className="mb-6 flex flex-wrap gap-2" action="/browse">
         <input
           type="text"
           name="q"
           defaultValue={q}
           placeholder="Search items…"
-          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="commons-input flex-1 text-sm"
         />
         <select
           name="category"
           defaultValue={category ?? ""}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="commons-input text-sm"
         >
           <option value="">All categories</option>
           {categories?.map((c) => (
@@ -79,30 +85,31 @@ const myLoanMap = new Map(
             </option>
           ))}
         </select>
-        <button className="rounded-lg bg-commons px-4 py-2 text-sm font-medium text-white">
-          Search
-        </button>
+        <button className="commons-button text-sm">Search</button>
       </form>
 
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-8">
         {items?.map((item) => {
           const isOwner = item.owner_id === user.id;
           const isFavorited = favoriteIds.has(item.id);
           const myLoan = myLoanMap.get(item.id);
 
           return (
-            <div key={item.id} className="rounded-xl border border-gray-200 p-4">
+            <div key={item.id} className="commons-card p-4">
+              <div className="commons-tape" />
+
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-medium text-commons-dark">{item.name}</h3>
-                  <p className="text-xs text-gray-500">
-                    {item.category?.name ?? "Uncategorized"} · shared by{" "}
-                    {item.owner?.display_name}
+                  <h3 className="commons-heading text-2xl leading-tight">
+                    {item.name}
+                  </h3>
+                  <p className="font-mono text-xs text-commons-ink/70">
+                    shared by {item.owner?.display_name}
                   </p>
                 </div>
                 <form action={toggleFavorite}>
                   <input type="hidden" name="item_id" value={item.id} />
-                  <button type="submit" aria-label="Favorite" className="text-lg">
+                  <button type="submit" aria-label="Favorite" className="text-2xl">
                     {isFavorited ? "♥" : "♡"}
                   </button>
                 </form>
@@ -113,56 +120,61 @@ const myLoanMap = new Map(
                 <img
                   src={item.image_url}
                   alt={item.name}
-                  className="mt-2 h-40 w-full rounded-lg object-cover"
+                  className="mt-2 h-40 w-full rounded-md border-2 border-commons-ink object-cover"
                 />
               )}
 
               {item.description && (
-                <p className="mt-2 text-sm text-gray-600">{item.description}</p>
+                <p className="mt-2 text-sm">{item.description}</p>
               )}
 
-              <span className="mt-2 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs capitalize text-gray-600">
-                {item.status.replace("_", " ")}
-              </span>
+              <div className="mt-3 flex flex-wrap gap-2">
+                <span className="commons-stamp commons-stamp-olive">
+                  {item.category?.name ?? "uncategorized"}
+                </span>
+                <span className={statusStampClass[item.status] ?? "commons-stamp"}>
+                  {item.status.replace("_", " ")}
+                </span>
+              </div>
 
               {!isOwner && item.status === "available" && !myLoan && (
-                <form action={requestLoan} className="mt-3 flex gap-2">
+                <form action={requestLoan} className="mt-4 flex gap-2">
                   <input type="hidden" name="item_id" value={item.id} />
                   <input
                     type="text"
                     name="message"
                     placeholder="Optional note to owner…"
-                    className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+                    className="commons-input flex-1 text-sm"
                   />
-                  <button className="rounded-lg bg-commons px-3 py-1.5 text-sm font-medium text-white">
-                    Request to borrow
-                  </button>
+                  <button className="commons-button text-sm">Request</button>
                 </form>
               )}
 
               {myLoan && (
-                <>
-                  <p className="mt-2 text-xs font-medium text-commons">
-                      Your request: {myLoan.status.replace("_", " ")}
-                  </p>
+                <div className="mt-3 flex items-center gap-3">
+                  <span className="commons-stamp commons-stamp-brick">
+                    {myLoan.status.replace("_", " ")}
+                  </span>
                   <a
-                     href={`/loans/${myLoan.id}`}
-                    className="text-xs text-commons hover:underline"
+                    href={`/loans/${myLoan.id}`}
+                    className="font-mono text-xs font-bold underline"
                   >
-                    View & message →
+                    view &amp; message →
                   </a>
-                </>
+                </div>
               )}
 
-              <details className="mt-3">
-                <summary className="cursor-pointer text-xs text-gray-500">
+              <details className="mt-4">
+                <summary className="cursor-pointer font-mono text-xs font-bold">
                   {item.comments?.length ?? 0} comment
                   {item.comments?.length === 1 ? "" : "s"}
                 </summary>
-                <div className="mt-2 flex flex-col gap-2">
+                <div className="mt-2 flex flex-col gap-2 border-t-2 border-dashed border-commons-ink/40 pt-2">
                   {item.comments?.map((c) => (
                     <p key={c.id} className="text-sm">
-                      <span className="font-medium">{c.user?.display_name}:</span>{" "}
+                      <span className="font-mono text-xs font-bold">
+                        {c.user?.display_name}:
+                      </span>{" "}
                       {c.comment}
                     </p>
                   ))}
@@ -172,9 +184,9 @@ const myLoanMap = new Map(
                       type="text"
                       name="comment"
                       placeholder="Add a comment…"
-                      className="flex-1 rounded-lg border border-gray-300 px-3 py-1.5 text-sm"
+                      className="commons-input flex-1 text-sm"
                     />
-                    <button className="rounded-lg border border-gray-300 px-3 py-1.5 text-sm">
+                    <button className="commons-button commons-button-secondary text-sm">
                       Post
                     </button>
                   </form>
@@ -185,7 +197,7 @@ const myLoanMap = new Map(
         })}
 
         {items?.length === 0 && (
-          <p className="text-sm text-gray-500">No items match your search yet.</p>
+          <p className="font-mono text-sm">No items match your search yet.</p>
         )}
       </div>
     </div>

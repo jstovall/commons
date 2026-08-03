@@ -1,10 +1,27 @@
 import type { Metadata, Viewport } from "next";
+import { Caveat, Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
+
+const caveat = Caveat({
+  subsets: ["latin"],
+  weight: ["600", "700"],
+  variable: "--font-display",
+});
+const spaceGrotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  variable: "--font-body",
+});
+const spaceMono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-mono",
+});
 
 export const metadata: Metadata = {
   title: "Commons",
   description: "Share and borrow with your neighbors.",
-  manifest: "/manifest.json", // added in the PWA build step
+  manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -13,7 +30,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#2F5D50",
+  themeColor: "#5C6B3E",
 };
 
 export default function RootLayout({
@@ -22,8 +39,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en">
-      <body className="min-h-screen bg-white text-gray-900 antialiased">
+    <html lang="en" className={`${caveat.variable} ${spaceGrotesk.variable} ${spaceMono.variable}`}>
+      <body className="min-h-screen bg-commons-cream font-body text-commons-ink antialiased">
         {children}
       </body>
     </html>
