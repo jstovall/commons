@@ -36,11 +36,14 @@ export default async function BrowsePage({
   const { data: items, error: itemsError } = await query;
   if (itemsError) console.error("Browse query error:", itemsError);
 
-  const { data: favorites } = await supabase
-    .from("favorites")
-    .select("item_id")
-    .eq("user_id", user.id);
-const favoriteIds = new Set((favorites ?? []).map((f) => f.item_id));
+const { data: favorites } = await supabase
+  .from("favorites")
+  .select("item_id")
+  .eq("user_id", user.id);
+
+const favoriteIds = new Set(
+  ((favorites ?? []) as { item_id: string }[]).map((f) => f.item_id)
+);
 
 const { data: myLoans } = await supabase
   .from("loans")
