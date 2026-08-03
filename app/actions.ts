@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import type { Database } from "@/types/database.types";
 
 async function requireActiveMembership() {
   const supabase = await createClient();
@@ -95,7 +96,7 @@ export async function toggleFavorite(formData: FormData) {
 // --- Comments -----------------------------------------------------------
 
 export async function addComment(formData: FormData) {
-  const { supabase, user } = await requireActiveMembership();
+  const { supabase, user, membership } = await requireActiveMembership();
   const itemId = formData.get("item_id") as string;
   const comment = (formData.get("comment") as string)?.trim();
   if (!comment) return;
@@ -103,6 +104,7 @@ export async function addComment(formData: FormData) {
   const { error } = await supabase.from("comments").insert({
     item_id: itemId,
     user_id: user.id,
+    neighborhood_id: membership.neighborhood_id,
     comment,
   });
   if (error) throw new Error(error.message);
@@ -112,7 +114,7 @@ export async function addComment(formData: FormData) {
 // --- Loans -----------------------------------------------------------------
 
 export async function requestLoan(formData: FormData) {
-  const { supabase, user } = await requireActiveMembership();
+  const { supabase, user, membership } = await requireActiveMembership();
   const itemId = formData.get("item_id") as string;
   const message = (formData.get("message") as string) || null;
 
@@ -127,10 +129,11 @@ export async function requestLoan(formData: FormData) {
     item_id: itemId,
     borrower_id: user.id,
     owner_id: item.owner_id,
+    neighborhood_id: membership.neighborhood_id,
     borrower_message: message,
   });
   if (error) throw new Error(error.message);
-revalidatePath("/browse", "page");
+  revalidatePath("/browse", "page");
 }
 
 export async function sendLoanMessage(formData: FormData) {
@@ -158,7 +161,9 @@ export async function respondToLoan(formData: FormData) {
     | "return"
     | "cancel";
 
-  const statusMap: Record<string, Record<string, unknown>> = {
+  type LoanUpdate = Database["public"]["Tables"]["loans"]["Update"];
+
+  const statusMap: Record<string, LoanUpdate> = {
     approve: { status: "approved", approved_at: new Date().toISOString() },
     deny: { status: "denied" },
     checkout: { status: "checked_out", checked_out_at: new Date().toISOString() },
@@ -168,8 +173,8 @@ export async function respondToLoan(formData: FormData) {
 
   const { error } = await supabase.from("loans").update(statusMap[action]).eq("id", loanId);
   if (error) throw new Error(error.message);
-revalidatePath("/browse", "page");
-  revalidatePath("/my-items");
+  revalidatePath("/browse", "page");
+  revalidatePath("/my-items", "page");
 }
 
 // --- Item requests ("wanted" board) ----------------------------------------
