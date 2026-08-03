@@ -21,20 +21,20 @@ body {
   }
 
   /* Scrapbook-cutout item/request card, hand-wobbly border, slight tilt */
-  .commons-card {
-    background-color: theme("colors.commons.card");
-    border: 2px solid theme("colors.commons.ink");
-    border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
-    box-shadow: 3px 3px 0 rgba(51, 43, 34, 0.25);
-    position: relative;
-    transform: rotate(var(--tilt, -1deg));
-  }
-  .commons-card:nth-child(3n + 2) {
-    --tilt: 1deg;
-  }
-  .commons-card:nth-child(3n + 3) {
-    --tilt: -0.5deg;
-  }
+.commons-card {
+  background-color: theme("colors.commons.card");
+  border: 2px solid theme("colors.commons.ink");
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  box-shadow: 3px 3px 0 rgba(51, 43, 34, 0.25);
+  position: relative;
+  transform: rotate(var(--tilt, -0.5deg));
+}
+.commons-card:nth-child(3n + 2) {
+  --tilt: 0.5deg;
+}
+.commons-card:nth-child(3n + 3) {
+  --tilt: -0.25deg;
+}
 @layer base {
   input,
   select,
