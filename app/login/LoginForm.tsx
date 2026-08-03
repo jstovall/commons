@@ -71,9 +71,9 @@ export default function LoginForm() {
 
       <p className="mt-4 text-center text-sm text-gray-500">
         New here?{" "}
-        <a href="/join" className="font-medium text-commons hover:underline">
-          Join your neighborhood
-        </a>
+      <a href="/signup" className="font-medium text-commons hover:underline">
+      Create an account
+      </a>
       </p>
     </>
   );

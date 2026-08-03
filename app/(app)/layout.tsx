@@ -14,6 +14,18 @@ const supabase = await createClient();
 
   if (!user) redirect("/login");
 
+  const { data: memberships } = await supabase
+  .from("neighborhood_members")
+  .select("status")
+  .eq("user_id", user.id);
+
+const hasActive = memberships?.some((m) => m.status === "active");
+const hasPending = memberships?.some((m) => m.status === "pending");
+
+if (!hasActive) {
+  redirect(hasPending ? "/pending" : "/join");
+}
+
   return (
     <div className="min-h-screen pb-20">
       <header className="border-b border-gray-200 px-6 py-4">
@@ -31,6 +43,9 @@ const supabase = await createClient();
         </Link>
         <Link href="/profile" className="text-sm text-gray-600 hover:text-commons">
           Profile
+        </Link>
+        <Link href="/requests" className="text-sm text-gray-600 hover:text-commons">
+        Requests
         </Link>
       </nav>
     </div>

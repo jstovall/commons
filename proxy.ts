@@ -1,7 +1,7 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { updateSession } from "@/lib/supabase/middleware";
 
-const PUBLIC_PATHS = ["/login", "/join", "/auth"];
+const PUBLIC_PATHS = ["/login", "/signup", "/join", "/auth"];
 
 export async function proxy(request: NextRequest) {
   const { response, user } = await updateSession(request);
