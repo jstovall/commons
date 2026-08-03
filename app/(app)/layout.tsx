@@ -25,6 +25,11 @@ const hasPending = memberships?.some((m) => m.status === "pending");
 if (!hasActive) {
   redirect(hasPending ? "/pending" : "/join");
 }
+const { count: unreadCount } = await supabase
+  .from("notifications")
+  .select("id", { count: "exact", head: true })
+  .eq("user_id", user.id)
+  .is("read_at", null);
 
   return (
     <div className="min-h-screen pb-20">
@@ -47,6 +52,14 @@ if (!hasActive) {
         <Link href="/requests" className="text-sm text-gray-600 hover:text-commons">
         Requests
         </Link>
+        <Link href="/notifications" className="relative text-sm text-gray-600 hover:text-commons">
+  🔔
+  {unreadCount != null && unreadCount > 0 && (
+    <span className="absolute -top-2 -right-3 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] text-white">
+      {unreadCount > 9 ? "9+" : unreadCount}
+    </span>
+  )}
+</Link>
       </nav>
     </div>
   );

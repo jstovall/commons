@@ -221,3 +221,31 @@ export async function updateItemRequestStatus(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/requests");
 }
+
+// --- Notifications ("notifications" board) ----------------------------------------
+export async function markNotificationRead(formData: FormData) {
+  const { supabase, user } = await requireActiveMembership();
+  const notificationId = formData.get("notification_id") as string;
+  const linkUrl = (formData.get("link_url") as string) || "/notifications";
+
+  await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("id", notificationId)
+    .eq("user_id", user.id);
+
+  revalidatePath("/notifications", "page");
+  redirect(linkUrl);
+}
+
+export async function markAllNotificationsRead() {
+  const { supabase, user } = await requireActiveMembership();
+
+  await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", user.id)
+    .is("read_at", null);
+
+  revalidatePath("/notifications", "page");
+}
