@@ -190,7 +190,7 @@ export async function createItemRequest(formData: FormData) {
     category_id: (formData.get("category_id") as string) || null,
   });
   if (error) throw new Error(error.message);
-  revalidatePath("/requests");
+  revalidatePath("/asks");
 }
 
 export async function respondToItemRequest(formData: FormData) {
@@ -206,7 +206,7 @@ export async function respondToItemRequest(formData: FormData) {
     message,
   });
   if (error) throw new Error(error.message);
-  revalidatePath("/requests");
+  revalidatePath("/asks");
 }
 
 export async function updateItemRequestStatus(formData: FormData) {
@@ -219,7 +219,7 @@ export async function updateItemRequestStatus(formData: FormData) {
     .update({ status })
     .eq("id", requestId);
   if (error) throw new Error(error.message);
-  revalidatePath("/requests");
+  revalidatePath("/asks");
 }
 
 // --- Notifications ("notifications" board) ----------------------------------------
