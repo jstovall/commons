@@ -279,12 +279,38 @@ export async function resolveReport(formData: FormData) {
   const targetId = formData.get("target_id") as string;
   const action = formData.get("action") as "dismiss" | "hide";
 
+  const { data: report } = await supabase
+    .from("reports")
+    .select("neighborhood_id, reason")
+    .eq("id", reportId)
+    .maybeSingle();
+
+  let contentOwnerId: string | null = null;
+
   if (action === "hide") {
     if (targetType === "item") {
+      const { data } = await supabase
+        .from("items")
+        .select("owner_id")
+        .eq("id", targetId)
+        .maybeSingle();
+      contentOwnerId = data?.owner_id ?? null;
       await supabase.from("items").update({ content_flag: true }).eq("id", targetId);
     } else if (targetType === "comment") {
+      const { data } = await supabase
+        .from("comments")
+        .select("user_id")
+        .eq("id", targetId)
+        .maybeSingle();
+      contentOwnerId = data?.user_id ?? null;
       await supabase.from("comments").update({ content_flag: true }).eq("id", targetId);
     } else if (targetType === "loan_message") {
+      const { data } = await supabase
+        .from("loan_messages")
+        .select("sender_id")
+        .eq("id", targetId)
+        .maybeSingle();
+      contentOwnerId = data?.sender_id ?? null;
       await supabase.from("loan_messages").delete().eq("id", targetId);
     }
   }
@@ -298,7 +324,74 @@ export async function resolveReport(formData: FormData) {
     })
     .eq("id", reportId);
   if (error) throw new Error(error.message);
+
+  if (action === "hide" && contentOwnerId && report) {
+    const { data: existingThread } = await supabase
+      .from("moderation_threads")
+      .select("id")
+      .eq("report_id", reportId)
+      .maybeSingle();
+
+    let threadId = existingThread?.id;
+
+    if (!threadId) {
+      const { data: newThread, error: threadError } = await supabase
+        .from("moderation_threads")
+        .insert({
+          report_id: reportId,
+          neighborhood_id: report.neighborhood_id,
+          content_owner_id: contentOwnerId,
+        })
+        .select("id")
+        .single();
+      if (threadError) throw new Error(threadError.message);
+      threadId = newThread.id;
+
+      await supabase.from("moderation_messages").insert({
+        thread_id: threadId,
+        sender_id: null,
+        is_system: true,
+        message: `Your ${targetType.replace("_", " ")} was removed by a moderator. Reason: "${report.reason}"`,
+      });
+
+      await supabase.from("notifications").insert({
+        user_id: contentOwnerId,
+        neighborhood_id: report.neighborhood_id,
+        type: "content_removed",
+        title: "Content removed",
+        body: `A moderator removed your ${targetType.replace("_", " ")}. Tap to see why or reply.`,
+        link_url: `/moderation/${threadId}`,
+      });
+    }
+
+    revalidatePath("/admin/reports", "page");
+    redirect(`/moderation/${threadId}`);
+  }
+
   revalidatePath("/admin/reports", "page");
+}
+
+async function requireStrictAdminMembership() {
+  const result = await requireAdminMembership();
+  if (result.membership.role !== "admin") {
+    redirect("/admin/reports");
+  }
+  return result;
+}
+
+export async function sendModerationMessage(formData: FormData) {
+  const { supabase, user } = await requireActiveMembership();
+  const threadId = formData.get("thread_id") as string;
+  const message = (formData.get("message") as string)?.trim();
+  if (!message) return;
+
+  const { error } = await supabase.from("moderation_messages").insert({
+    thread_id: threadId,
+    sender_id: user.id,
+    message,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/moderation/${threadId}`, "page");
 }
 
 // --- Neighborhood admin --------------------------------------------------
@@ -317,7 +410,7 @@ export async function removeMember(formData: FormData) {
 }
 
 export async function updateMemberRole(formData: FormData) {
-  const { supabase, membership } = await requireAdminMembership();
+  const { supabase, membership } = await requireStrictAdminMembership();
   const memberUserId = formData.get("user_id") as string;
   const role = formData.get("role") as "member" | "moderator" | "admin";
 
@@ -338,7 +431,7 @@ function generateInviteCode(): string {
 }
 
 export async function regenerateInviteCode(formData: FormData) {
-  const { supabase, membership } = await requireAdminMembership();
+  const { supabase, membership } = await requireStrictAdminMembership();
   const newCode = generateInviteCode();
 
   const { error } = await supabase

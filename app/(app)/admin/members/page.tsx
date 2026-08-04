@@ -9,13 +9,14 @@ export default async function AdminMembersPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: myMembership } = await supabase
-    .from("neighborhood_members")
-    .select("neighborhood_id, neighborhood:neighborhoods(name, invite_code)")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
-  if (!myMembership) redirect("/browse");
+const { data: myMembership } = await supabase
+  .from("neighborhood_members")
+  .select("neighborhood_id, role, neighborhood:neighborhoods(name, invite_code)")
+  .eq("user_id", user.id)
+  .eq("status", "active")
+  .maybeSingle();
+if (!myMembership) redirect("/browse");
+if (myMembership.role !== "admin") redirect("/admin/reports");
 
   const { data: members, error } = await supabase
     .from("neighborhood_members")

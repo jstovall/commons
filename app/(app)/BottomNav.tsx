@@ -10,12 +10,15 @@ const navItems = [
   { href: "/profile", label: "Profile" },
 ];
 
-export default function BottomNav() {
+export default function BottomNav({ isAdmin }: { isAdmin?: boolean }) {
   const pathname = usePathname();
+  const items = isAdmin
+    ? [...navItems, { href: "/admin/members", label: "Admin" }]
+    : navItems;
 
   return (
     <nav className="fixed inset-x-0 bottom-0 flex justify-around gap-2 border-t-2 border-commons-ink bg-commons-card px-2 py-2">
-      {navItems.map((item) => {
+      {items.map((item) => {
         const isActive = pathname.startsWith(item.href);
         return (
           <Link

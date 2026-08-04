@@ -27,13 +27,15 @@ export default async function AdminLayout({
   return (
     <div>
       <div className="mb-6 flex gap-2">
-        <Link href="/admin/members" className="commons-button commons-button-secondary text-xs">
-          Members
-        </Link>
-        <Link href="/admin/reports" className="commons-button commons-button-secondary text-xs">
-          Reports
-        </Link>
-      </div>
+  {membership.role === "admin" && (
+    <Link href="/admin/members" className="commons-button commons-button-secondary text-xs">
+      Members
+    </Link>
+  )}
+  <Link href="/admin/reports" className="commons-button commons-button-secondary text-xs">
+    Reports
+  </Link>
+</div>
       {children}
     </div>
   );

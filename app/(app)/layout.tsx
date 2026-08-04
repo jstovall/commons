@@ -17,7 +17,7 @@ export default async function AppLayout({
 
   const { data: memberships } = await supabase
     .from("neighborhood_members")
-    .select("status")
+    .select("status, role")
     .eq("user_id", user.id);
 
 const hasActive = memberships?.some((m) => m.status === "active");
@@ -25,6 +25,10 @@ const hasActive = memberships?.some((m) => m.status === "active");
 if (!hasActive) {
   redirect("/join");
 }
+
+const isAdmin = memberships?.some(
+  (m) => m.status === "active" && (m.role === "admin" || m.role === "moderator")
+);
 
   const { count: unreadCount } = await supabase
     .from("notifications")
@@ -50,7 +54,7 @@ if (!hasActive) {
 
       <main className="px-4 py-6">{children}</main>
 
-<BottomNav />
+<BottomNav isAdmin={isAdmin} />
     </div>
   );
 }
