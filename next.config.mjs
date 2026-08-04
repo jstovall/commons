@@ -5,12 +5,19 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: "https",
-        // Supabase Storage public bucket URLs — replace with your project ref
         hostname: "*.supabase.co",
       },
     ],
   },
-  // PWA (manifest + service worker + push) is wired up in the next build step.
+  async redirects() {
+    return [
+      {
+        source: "/requests",
+        destination: "/asks",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
