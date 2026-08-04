@@ -4,6 +4,8 @@ import {
   createItemRequest,
   respondToItemRequest,
   updateItemRequestStatus,
+  flagContent,
+  startAskThread,
 } from "@/app/actions";
 
 const statusStampClass: Record<string, string> = {
@@ -11,6 +13,14 @@ const statusStampClass: Record<string, string> = {
   fulfilled: "commons-stamp commons-stamp-olive",
   cancelled: "commons-stamp",
 };
+
+function formatAskDate(dateString: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  }).format(new Date(dateString));
+}
 
 export default async function AsksPage() {
   const supabase = await createClient();
@@ -33,7 +43,7 @@ export default async function AsksPage() {
   const { data: asks, error: asksError } = await supabase
     .from("item_requests")
     .select(
-      `id, title, description, status, created_at, requester_id,
+      `id, title, description, status, created_at, requester_id, content_flag,
        category:categories(name),
        requester:profiles(display_name),
        item_request_responses(
@@ -42,21 +52,24 @@ export default async function AsksPage() {
          item:items(id, name)
        )`
     )
+    .eq("content_flag", false)
     .order("created_at", { ascending: false });
   if (asksError) console.error("Asks query error:", asksError);
-const sortedAsks = [...(asks ?? [])].sort((a, b) => {
-  if (a.status === "open" && b.status !== "open") return -1;
-  if (a.status !== "open" && b.status === "open") return 1;
-  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
-});
 
-function formatAskDate(dateString: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  }).format(new Date(dateString));
-}
+  const { data: myThreads } = await supabase
+    .from("ask_threads")
+    .select("id, request_id, responder_id")
+    .eq("requester_id", user.id);
+  const threadMap = new Map(
+    (myThreads ?? []).map((t) => [`${t.request_id}:${t.responder_id}`, t.id])
+  );
+
+  const sortedAsks = [...(asks ?? [])].sort((a, b) => {
+    if (a.status === "open" && b.status !== "open") return -1;
+    if (a.status !== "open" && b.status === "open") return 1;
+    return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+  });
+
   return (
     <div>
       <h2 className="commons-heading mb-1 text-3xl">Asks</h2>
@@ -108,7 +121,8 @@ function formatAskDate(dateString: string) {
                     {ask.title}
                   </h3>
                   <p className="font-mono text-xs text-commons-ink/70">
-                    asked by {ask.requester?.display_name} · {formatAskDate(ask.created_at)}
+                    asked by {ask.requester?.display_name} ·{" "}
+                    {formatAskDate(ask.created_at)}
                   </p>
                 </div>
                 <span className={statusStampClass[ask.status] ?? "commons-stamp"}>
@@ -145,20 +159,86 @@ function formatAskDate(dateString: string) {
                 </div>
               )}
 
-              <div className="mt-4 flex flex-col gap-2 border-t-2 border-dashed border-commons-ink/40 pt-3">
-                {ask.item_request_responses?.map((r) => (
-                  <div key={r.id} className="text-sm">
-                    <span className="font-mono text-xs font-bold">
-                      {r.responder?.display_name}:
-                    </span>{" "}
-                    {r.message}
-                    {r.item && (
-                      <span className="ml-1 font-mono text-xs text-commons-teal">
-                        (linked: {r.item.name})
-                      </span>
-                    )}
-                  </div>
-                ))}
+              {!isMine && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer font-mono text-[10px] text-commons-ink/50">
+                    🚩 report this ask
+                  </summary>
+                  <form action={flagContent} className="mt-1 flex gap-2">
+                    <input type="hidden" name="target_type" value="item_request" />
+                    <input type="hidden" name="target_id" value={ask.id} />
+                    <input
+                      name="reason"
+                      required
+                      placeholder="Why report this ask?"
+                      className="commons-input flex-1 text-xs"
+                    />
+                    <button className="commons-button commons-button-secondary text-xs">
+                      Submit
+                    </button>
+                  </form>
+                </details>
+              )}
+
+              <div className="mt-4 flex flex-col gap-3 border-t-2 border-dashed border-commons-ink/40 pt-3">
+                {ask.item_request_responses?.map((r) => {
+                  const existingThreadId = threadMap.get(`${ask.id}:${r.responder_id}`);
+                  return (
+                    <div key={r.id} className="text-sm">
+                      <span className="font-mono text-xs font-bold">
+                        {r.responder?.display_name}:
+                      </span>{" "}
+                      {r.message}
+                      {r.item && (
+                        <span className="ml-1 font-mono text-xs text-commons-teal">
+                          (linked: {r.item.name})
+                        </span>
+                      )}
+
+                      <div className="mt-1 flex gap-3">
+                        {isMine && r.responder_id !== user.id && (
+                          existingThreadId ? (
+                            <a
+                              href={`/asks/threads/${existingThreadId}`}
+                              className="font-mono text-[10px] font-bold underline"
+                            >
+                              💬 continue conversation →
+                            </a>
+                          ) : (
+                            <form action={startAskThread}>
+                              <input type="hidden" name="request_id" value={ask.id} />
+                              <input type="hidden" name="responder_id" value={r.responder_id} />
+                              <button className="font-mono text-[10px] font-bold underline">
+                                💬 message about this
+                              </button>
+                            </form>
+                          )
+                        )}
+
+                        {r.responder_id !== user.id && (
+                          <details>
+                            <summary className="cursor-pointer font-mono text-[10px] text-commons-ink/50">
+                              🚩 report
+                            </summary>
+                            <form action={flagContent} className="mt-1 flex gap-2">
+                              <input type="hidden" name="target_type" value="item_request_response" />
+                              <input type="hidden" name="target_id" value={r.id} />
+                              <input
+                                name="reason"
+                                required
+                                placeholder="Why report this reply?"
+                                className="commons-input flex-1 text-xs"
+                              />
+                              <button className="commons-button commons-button-secondary text-xs">
+                                Submit
+                              </button>
+                            </form>
+                          </details>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
 
                 {!isMine && ask.status === "open" && (
                   <form

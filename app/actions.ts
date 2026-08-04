@@ -221,7 +221,12 @@ async function requireAdminMembership() {
 
 export async function flagContent(formData: FormData) {
   const { supabase, user } = await requireActiveMembership();
-  const targetType = formData.get("target_type") as "item" | "comment" | "loan_message";
+  const targetType = formData.get("target_type") as
+    | "item"
+    | "comment"
+    | "loan_message"
+    | "item_request"
+    | "item_request_response";
   const targetId = formData.get("target_id") as string;
   const reason = (formData.get("reason") as string)?.trim();
   if (!reason) return;
@@ -255,6 +260,27 @@ export async function flagContent(formData: FormData) {
         .eq("id", data.loan_id)
         .maybeSingle();
       neighborhoodId = loan?.neighborhood_id ?? null;
+    }
+  } else if (targetType === "item_request") {
+    const { data } = await supabase
+      .from("item_requests")
+      .select("neighborhood_id")
+      .eq("id", targetId)
+      .maybeSingle();
+    neighborhoodId = data?.neighborhood_id ?? null;
+  } else if (targetType === "item_request_response") {
+    const { data } = await supabase
+      .from("item_request_responses")
+      .select("request_id")
+      .eq("id", targetId)
+      .maybeSingle();
+    if (data) {
+      const { data: req } = await supabase
+        .from("item_requests")
+        .select("neighborhood_id")
+        .eq("id", data.request_id)
+        .maybeSingle();
+      neighborhoodId = req?.neighborhood_id ?? null;
     }
   }
 
@@ -304,7 +330,9 @@ export async function resolveReport(formData: FormData) {
         .maybeSingle();
       contentOwnerId = data?.user_id ?? null;
       await supabase.from("comments").update({ content_flag: true }).eq("id", targetId);
-    } else if (targetType === "loan_message") {
+    }
+    
+    else if (targetType === "loan_message") {
       const { data } = await supabase
         .from("loan_messages")
         .select("sender_id")
@@ -312,7 +340,24 @@ export async function resolveReport(formData: FormData) {
         .maybeSingle();
       contentOwnerId = data?.sender_id ?? null;
       await supabase.from("loan_messages").delete().eq("id", targetId);
-    }
+    } else if (targetType === "item_request") {
+  const { data } = await supabase
+    .from("item_requests")
+    .select("requester_id")
+    .eq("id", targetId)
+    .maybeSingle();
+  contentOwnerId = data?.requester_id ?? null;
+  await supabase.from("item_requests").update({ content_flag: true }).eq("id", targetId);
+} else if (targetType === "item_request_response") {
+  const { data } = await supabase
+    .from("item_request_responses")
+    .select("responder_id")
+    .eq("id", targetId)
+    .maybeSingle();
+  contentOwnerId = data?.responder_id ?? null;
+  await supabase.from("item_request_responses").delete().eq("id", targetId);
+}
+    
   }
 
   const { error } = await supabase
@@ -502,4 +547,74 @@ export async function markAllNotificationsRead() {
     .is("read_at", null);
 
   revalidatePath("/notifications", "page");
+}
+// --- DM Threads ----------------------------------------
+
+export async function startAskThread(formData: FormData) {
+  const { supabase, user, membership } = await requireActiveMembership();
+  const requestId = formData.get("request_id") as string;
+  const responderId = formData.get("responder_id") as string;
+
+  const { data: existing } = await supabase
+    .from("ask_threads")
+    .select("id")
+    .eq("request_id", requestId)
+    .eq("responder_id", responderId)
+    .maybeSingle();
+
+  let threadId = existing?.id;
+
+  if (!threadId) {
+    const { data: newThread, error } = await supabase
+      .from("ask_threads")
+      .insert({
+        request_id: requestId,
+        neighborhood_id: membership.neighborhood_id,
+        requester_id: user.id,
+        responder_id: responderId,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    threadId = newThread.id;
+
+    const { data: request } = await supabase
+      .from("item_requests")
+      .select("title")
+      .eq("id", requestId)
+      .maybeSingle();
+
+    await supabase.from("ask_messages").insert({
+      thread_id: threadId,
+      sender_id: null,
+      is_system: true,
+      message: `Conversation started about: "${request?.title ?? "your ask"}"`,
+    });
+
+    await supabase.from("notifications").insert({
+      user_id: responderId,
+      neighborhood_id: membership.neighborhood_id,
+      type: "ask_message",
+      title: "New message about an ask",
+      body: `Someone wants to chat about their ask for "${request?.title ?? ""}"`,
+      link_url: `/asks/threads/${threadId}`,
+    });
+  }
+
+  redirect(`/asks/threads/${threadId}`);
+}
+
+export async function sendAskMessage(formData: FormData) {
+  const { supabase, user } = await requireActiveMembership();
+  const threadId = formData.get("thread_id") as string;
+  const message = (formData.get("message") as string)?.trim();
+  if (!message) return;
+
+  const { error } = await supabase.from("ask_messages").insert({
+    thread_id: threadId,
+    sender_id: user.id,
+    message,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/asks/threads/${threadId}`, "page");
 }
