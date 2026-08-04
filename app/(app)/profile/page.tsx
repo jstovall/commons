@@ -11,7 +11,7 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name, profile_image_url")
+    .select("display_name")
     .eq("id", user.id)
     .maybeSingle();
 
@@ -35,18 +35,9 @@ export default async function ProfilePage() {
         <h2 className="commons-heading mb-4 text-3xl">Your profile</h2>
 
         <div className="commons-card-flat flex items-center gap-4 p-4">
-          {profile?.profile_image_url ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={profile.profile_image_url}
-              alt={profile.display_name ?? ""}
-              className="h-14 w-14 rounded-full border-2 border-commons-ink object-cover"
-            />
-          ) : (
-            <div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-commons-ink bg-commons-ochre font-mono text-lg font-bold">
-              {initials}
-            </div>
-          )}
+<div className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-commons-ink bg-commons-ochre font-mono text-lg font-bold">
+  {initials}
+</div>
           <div>
             <p className="commons-heading text-xl leading-none">
               {profile?.display_name}
@@ -64,15 +55,6 @@ export default async function ProfilePage() {
               name="display_name"
               required
               defaultValue={profile?.display_name ?? ""}
-              className="commons-input mt-1 w-full text-sm font-body normal-case"
-            />
-          </label>
-          <label className="font-mono text-xs font-bold uppercase">
-            Profile image URL (optional)
-            <input
-              name="profile_image_url"
-              defaultValue={profile?.profile_image_url ?? ""}
-              placeholder="https://…"
               className="commons-input mt-1 w-full text-sm font-body normal-case"
             />
           </label>

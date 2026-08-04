@@ -29,12 +29,36 @@ async function requireActiveMembership() {
 export async function createItem(formData: FormData) {
   const { supabase, user, membership } = await requireActiveMembership();
 
+  const itemId = crypto.randomUUID();
+  let imageUrl: string | null = null;
+
+  const file = formData.get("image_file") as File | null;
+  if (file && file.size > 0) {
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${membership.neighborhood_id}/${user.id}/${itemId}.${ext}`;
+
+    console.log("Upload debug:", {
+      neighborhood_id: membership.neighborhood_id,
+      user_id: user.id,
+      path,
+    });
+
+    const { error: uploadError } = await supabase.storage
+      .from("item-images")
+      .upload(path, file, { contentType: file.type, upsert: true });
+    if (uploadError) throw new Error(uploadError.message);
+
+    const { data: publicUrlData } = supabase.storage.from("item-images").getPublicUrl(path);
+    imageUrl = publicUrlData.publicUrl;
+  }
+
   const { error } = await supabase.from("items").insert({
+    id: itemId,
     neighborhood_id: membership.neighborhood_id,
     owner_id: user.id,
     name: formData.get("name") as string,
     description: (formData.get("description") as string) || null,
-    image_url: (formData.get("image_url") as string) || null,
+    image_url: imageUrl,
     category_id: (formData.get("category_id") as string) || null,
   });
 
@@ -44,15 +68,30 @@ export async function createItem(formData: FormData) {
 }
 
 export async function updateItem(formData: FormData) {
-  const { supabase } = await requireActiveMembership();
+  const { supabase, user, membership } = await requireActiveMembership();
   const itemId = formData.get("item_id") as string;
+
+  let imageUrl = (formData.get("existing_image_url") as string) || null;
+
+  const file = formData.get("image_file") as File | null;
+  if (file && file.size > 0) {
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${membership.neighborhood_id}/${user.id}/${itemId}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("item-images")
+      .upload(path, file, { contentType: file.type, upsert: true });
+    if (uploadError) throw new Error(uploadError.message);
+
+    const { data: publicUrlData } = supabase.storage.from("item-images").getPublicUrl(path);
+    imageUrl = publicUrlData.publicUrl;
+  }
 
   const { error } = await supabase
     .from("items")
     .update({
       name: formData.get("name") as string,
       description: (formData.get("description") as string) || null,
-      image_url: (formData.get("image_url") as string) || null,
+      image_url: imageUrl,
       category_id: (formData.get("category_id") as string) || null,
     })
     .eq("id", itemId);
@@ -494,7 +533,6 @@ export async function updateProfile(formData: FormData) {
     .from("profiles")
     .update({
       display_name: formData.get("display_name") as string,
-      profile_image_url: (formData.get("profile_image_url") as string) || null,
     })
     .eq("id", user.id);
 

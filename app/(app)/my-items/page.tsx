@@ -59,35 +59,39 @@ const sortedGroups = Array.from(groupedItems.entries()).sort(([a], [b]) =>
         <summary className="cursor-pointer font-mono text-sm font-bold">
           + post a new item
         </summary>
-        <form action={createItem} className="mt-3 flex flex-col gap-3">
-          <input
-            name="name"
-            required
-            placeholder="Item name"
-            className="commons-input text-sm"
-          />
-          <select name="category_id" className="commons-input text-sm">
-            <option value="">Choose a category</option>
-            {categories?.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <textarea
-            name="description"
-            placeholder="Description"
-            className="commons-input text-sm"
-          />
-          <input
-            name="image_url"
-            placeholder="Image URL (optional for now)"
-            className="commons-input text-sm"
-          />
-          <button className="commons-button self-start text-sm">
-            Post item
-          </button>
-        </form>
+<form action={createItem} className="mt-3 flex flex-col gap-3">
+  <input
+    name="name"
+    required
+    placeholder="Item name"
+    className="commons-input text-sm"
+  />
+  <select name="category_id" className="commons-input text-sm">
+    <option value="">Choose a category</option>
+    {categories?.map((c) => (
+      <option key={c.id} value={c.id}>
+        {c.name}
+      </option>
+    ))}
+  </select>
+  <textarea
+    name="description"
+    placeholder="Description"
+    className="commons-input text-sm"
+  />
+  <label className="font-mono text-xs font-bold uppercase">
+    Photo (optional)
+    <input
+      type="file"
+      name="image_file"
+      accept="image/*"
+      className="commons-input mt-1 w-full text-sm font-body normal-case"
+    />
+  </label>
+  <button className="commons-button self-start text-sm">
+    Post item
+  </button>
+</form>
       </details>
 
       {incomingLoans && incomingLoans.length > 0 && (
@@ -184,39 +188,52 @@ const sortedGroups = Array.from(groupedItems.entries()).sort(([a], [b]) =>
               <summary className="cursor-pointer font-mono text-xs font-bold">
                 edit
               </summary>
-              <form action={updateItem} className="mt-2 flex flex-col gap-2">
-                <input type="hidden" name="item_id" value={item.id} />
-                <input
-                  name="name"
-                  defaultValue={item.name}
-                  className="commons-input text-sm"
-                />
-                <select
-                  name="category_id"
-                  defaultValue={item.category_id ?? ""}
-                  className="commons-input text-sm"
-                >
-                  <option value="">Choose a category</option>
-                  {categories?.map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.name}
-                    </option>
-                  ))}
-                </select>
-                <textarea
-                  name="description"
-                  defaultValue={item.description ?? ""}
-                  className="commons-input text-sm"
-                />
-                <input
-                  name="image_url"
-                  defaultValue={item.image_url ?? ""}
-                  className="commons-input text-sm"
-                />
-                <button className="commons-button self-start text-xs">
-                  Save
-                </button>
-              </form>
+<form action={updateItem} className="mt-2 flex flex-col gap-2">
+  <input type="hidden" name="item_id" value={item.id} />
+  <input type="hidden" name="existing_image_url" value={item.image_url ?? ""} />
+  <input
+    name="name"
+    defaultValue={item.name}
+    className="commons-input text-sm"
+  />
+  <select
+    name="category_id"
+    defaultValue={item.category_id ?? ""}
+    className="commons-input text-sm"
+  >
+    <option value="">Choose a category</option>
+    {categories?.map((c) => (
+      <option key={c.id} value={c.id}>
+        {c.name}
+      </option>
+    ))}
+  </select>
+  <textarea
+    name="description"
+    defaultValue={item.description ?? ""}
+    className="commons-input text-sm"
+  />
+  {item.image_url && (
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={item.image_url}
+      alt=""
+      className="h-24 w-24 rounded-md border-2 border-commons-ink object-cover"
+    />
+  )}
+  <label className="font-mono text-xs font-bold uppercase">
+    Replace photo (optional)
+    <input
+      type="file"
+      name="image_file"
+      accept="image/*"
+      className="commons-input mt-1 w-full text-sm font-body normal-case"
+    />
+  </label>
+  <button className="commons-button self-start text-xs">
+    Save
+  </button>
+</form>
               <form action={deleteItem} className="mt-2">
                 <input type="hidden" name="item_id" value={item.id} />
                 <button className="font-mono text-xs font-bold text-commons-brick underline">
