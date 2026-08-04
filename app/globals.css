@@ -20,6 +20,13 @@ body {
     font-weight: 700;
   }
 
+.commons-card-flat {
+  background-color: theme("colors.commons.card");
+  border: 2px solid theme("colors.commons.ink");
+  border-radius: 10px;
+  box-shadow: 3px 3px 0 rgba(51, 43, 34, 0.25);
+}
+
   /* Scrapbook-cutout item/request card, hand-wobbly border, slight tilt */
 .commons-card {
   background-color: theme("colors.commons.card");

@@ -8,7 +8,15 @@ const statusStampClass: Record<string, string> = {
   checked_out: "commons-stamp commons-stamp-brick",
   unavailable: "commons-stamp",
 };
-
+function formatDateTime(dateString: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(dateString));
+}
 export default async function BrowsePage({
   searchParams,
 }: {
@@ -172,13 +180,16 @@ const { data: myLoans } = await supabase
                 </summary>
                 <div className="mt-2 flex flex-col gap-2 border-t-2 border-dashed border-commons-ink/40 pt-2">
                   {item.comments?.map((c) => (
-                    <p key={c.id} className="text-sm">
-                      <span className="font-mono text-xs font-bold">
-                        {c.user?.display_name}:
-                      </span>{" "}
-                      {c.comment}
-                    </p>
-                  ))}
+  <p key={c.id} className="text-sm">
+    <span className="font-mono text-xs font-bold">
+      {c.user?.display_name}:
+    </span>{" "}
+    {c.comment}{" "}
+    <span className="font-mono text-[10px] text-commons-ink/50">
+      · {formatDateTime(c.created_at)}
+    </span>
+  </p>
+))}
                   <form action={addComment} className="mt-1 flex gap-2">
                     <input type="hidden" name="item_id" value={item.id} />
                     <input

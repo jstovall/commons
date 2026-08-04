@@ -2,6 +2,16 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { respondToLoan, sendLoanMessage } from "@/app/actions";
 
+function formatDateTime(dateString: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  }).format(new Date(dateString));
+}
+
 export default async function LoanDetailPage({
   params,
 }: {
@@ -33,51 +43,55 @@ export default async function LoanDetailPage({
 
   const { data: messages, error: messagesError } = await supabase
     .from("loan_messages")
-    .select("id, message, created_at, sender_id, sender:profiles(display_name)")
+    .select(
+      "id, message, created_at, sender_id, is_system, sender:profiles(display_name)"
+    )
     .eq("loan_id", id)
     .order("created_at", { ascending: true });
   if (messagesError) console.error("Loan messages query error:", messagesError);
 
   return (
     <div>
-      <a href={isOwner ? "/my-items" : "/browse"} className="text-xs text-commons">
-        ← Back
+      <a
+        href={isOwner ? "/my-items" : "/browse"}
+        className="font-mono text-xs font-bold underline"
+      >
+        ← back
       </a>
 
-      <div className="mt-3 rounded-xl border border-gray-200 p-4">
-        <h2 className="text-lg font-semibold text-commons-dark">
+      <div className="commons-card-flat mt-3 p-4">
+        <h2 className="commons-heading text-2xl leading-tight">
           {loan.item?.name}
         </h2>
-        <p className="mt-1 text-sm text-gray-500">
+        <p className="mt-1 font-mono text-xs text-commons-ink/70">
           {isOwner
-            ? `Requested by ${loan.borrower?.display_name}`
-            : `Owned by ${loan.owner?.display_name}`}
+            ? `requested by ${loan.borrower?.display_name}`
+            : `owned by ${loan.owner?.display_name}`}{" "}
+          · {formatDateTime(loan.requested_at)}
         </p>
-        <span className="mt-2 inline-block rounded-full bg-gray-100 px-2 py-0.5 text-xs capitalize text-gray-600">
+        <span className="commons-stamp commons-stamp-teal mt-2 inline-block">
           {loan.status.replace("_", " ")}
         </span>
 
         {loan.borrower_message && (
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm italic">
             Original note: &ldquo;{loan.borrower_message}&rdquo;
           </p>
         )}
 
         {isOwner && (
-          <div className="mt-3 flex gap-2">
+          <div className="mt-4 flex flex-wrap gap-2">
             {loan.status === "requested" && (
               <>
                 <form action={respondToLoan}>
                   <input type="hidden" name="loan_id" value={loan.id} />
                   <input type="hidden" name="action" value="approve" />
-                  <button className="rounded-lg bg-commons px-3 py-1 text-xs font-medium text-white">
-                    Approve
-                  </button>
+                  <button className="commons-button text-xs">Approve</button>
                 </form>
                 <form action={respondToLoan}>
                   <input type="hidden" name="loan_id" value={loan.id} />
                   <input type="hidden" name="action" value="deny" />
-                  <button className="rounded-lg border border-gray-300 px-3 py-1 text-xs">
+                  <button className="commons-button commons-button-danger text-xs">
                     Deny
                   </button>
                 </form>
@@ -87,7 +101,7 @@ export default async function LoanDetailPage({
               <form action={respondToLoan}>
                 <input type="hidden" name="loan_id" value={loan.id} />
                 <input type="hidden" name="action" value="checkout" />
-                <button className="rounded-lg bg-commons px-3 py-1 text-xs font-medium text-white">
+                <button className="commons-button text-xs">
                   Mark checked out
                 </button>
               </form>
@@ -96,7 +110,7 @@ export default async function LoanDetailPage({
               <form action={respondToLoan}>
                 <input type="hidden" name="loan_id" value={loan.id} />
                 <input type="hidden" name="action" value="return" />
-                <button className="rounded-lg bg-commons px-3 py-1 text-xs font-medium text-white">
+                <button className="commons-button text-xs">
                   Mark returned
                 </button>
               </form>
@@ -105,44 +119,62 @@ export default async function LoanDetailPage({
         )}
 
         {isBorrower && loan.status === "requested" && (
-          <form action={respondToLoan} className="mt-3">
+          <form action={respondToLoan} className="mt-4">
             <input type="hidden" name="loan_id" value={loan.id} />
             <input type="hidden" name="action" value="cancel" />
-            <button className="rounded-lg border border-gray-300 px-3 py-1 text-xs">
+            <button className="commons-button commons-button-secondary text-xs">
               Cancel request
             </button>
           </form>
         )}
       </div>
 
-      <h3 className="mb-2 mt-6 text-sm font-semibold text-gray-700">
+      <h3 className="mb-3 mt-6 font-mono text-sm font-bold uppercase">
         Messages
       </h3>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-3">
         {messages?.map((m) => {
+          if (m.is_system) {
+            return (
+              <p
+                key={m.id}
+                className="my-1 text-center font-mono text-[10px] text-commons-ink/50"
+              >
+                — {m.message} · {formatDateTime(m.created_at)} —
+              </p>
+            );
+          }
+
           const fromMe = m.sender_id === user.id;
           return (
             <div
               key={m.id}
-              className={`max-w-[80%] rounded-lg px-3 py-2 text-sm ${
+              className={`max-w-[85%] rounded-lg px-3 py-2 text-sm shadow-md ${
                 fromMe
-                  ? "self-end bg-commons text-white"
-                  : "self-start bg-gray-100 text-gray-800"
+                  ? "self-end bg-commons-teal text-commons-cream"
+                  : "self-start bg-commons-card text-commons-ink"
               }`}
               style={{ alignSelf: fromMe ? "flex-end" : "flex-start" }}
             >
               {!fromMe && (
-                <p className="mb-0.5 text-xs font-medium opacity-70">
+                <p className="mb-0.5 font-mono text-xs font-bold opacity-70">
                   {m.sender?.display_name}
                 </p>
               )}
-              {m.message}
+              <p>{m.message}</p>
+              <p
+                className={`mt-1 font-mono text-[10px] ${
+                  fromMe ? "text-commons-cream/70" : "text-commons-ink/50"
+                }`}
+              >
+                {formatDateTime(m.created_at)}
+              </p>
             </div>
           );
         })}
 
         {messages?.length === 0 && (
-          <p className="text-sm text-gray-500">
+          <p className="font-mono text-sm">
             No messages yet — coordinate pickup/return details here.
           </p>
         )}
@@ -155,11 +187,9 @@ export default async function LoanDetailPage({
           name="message"
           required
           placeholder="Message about pickup, timing, etc…"
-          className="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          className="commons-input flex-1 text-sm"
         />
-        <button className="rounded-lg bg-commons px-4 py-2 text-sm font-medium text-white">
-          Send
-        </button>
+        <button className="commons-button text-sm">Send</button>
       </form>
     </div>
   );

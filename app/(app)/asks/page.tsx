@@ -44,7 +44,19 @@ export default async function AsksPage() {
     )
     .order("created_at", { ascending: false });
   if (asksError) console.error("Asks query error:", asksError);
+const sortedAsks = [...(asks ?? [])].sort((a, b) => {
+  if (a.status === "open" && b.status !== "open") return -1;
+  if (a.status !== "open" && b.status === "open") return 1;
+  return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+});
 
+function formatAskDate(dateString: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  }).format(new Date(dateString));
+}
   return (
     <div>
       <h2 className="commons-heading mb-1 text-3xl">Asks</h2>
@@ -84,7 +96,7 @@ export default async function AsksPage() {
       </details>
 
       <div className="flex flex-col gap-6">
-        {asks?.map((ask) => {
+        {sortedAsks.map((ask) => {
           const isMine = ask.requester_id === user.id;
           return (
             <div key={ask.id} className="commons-card p-4">
@@ -96,7 +108,7 @@ export default async function AsksPage() {
                     {ask.title}
                   </h3>
                   <p className="font-mono text-xs text-commons-ink/70">
-                    asked by {ask.requester?.display_name}
+                    asked by {ask.requester?.display_name} · {formatAskDate(ask.created_at)}
                   </p>
                 </div>
                 <span className={statusStampClass[ask.status] ?? "commons-stamp"}>
@@ -182,7 +194,7 @@ export default async function AsksPage() {
           );
         })}
 
-        {asks?.length === 0 && (
+        {sortedAsks.length === 0 && (
           <p className="font-mono text-sm">No asks yet — be the first!</p>
         )}
       </div>
