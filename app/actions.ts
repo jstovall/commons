@@ -208,6 +208,26 @@ export async function respondToItemRequest(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/asks");
 }
+export async function updateProfile(formData: FormData) {
+  const { supabase, user } = await requireActiveMembership();
+
+  const { error } = await supabase
+    .from("profiles")
+    .update({
+      display_name: formData.get("display_name") as string,
+      profile_image_url: (formData.get("profile_image_url") as string) || null,
+    })
+    .eq("id", user.id);
+
+  if (error) throw new Error(error.message);
+  revalidatePath("/profile", "page");
+}
+
+export async function signOutAction() {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
+  redirect("/login");
+}
 
 export async function updateItemRequestStatus(formData: FormData) {
   const { supabase } = await requireActiveMembership();
