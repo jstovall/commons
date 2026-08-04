@@ -12,55 +12,56 @@ export default function JoinPage() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  async function handleJoin(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    setError(null);
+async function handleJoin(e: React.FormEvent) {
+  e.preventDefault();
+  setLoading(true);
+  setError(null);
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-
-    const { data: neighborhood, error: lookupError } = await supabase
-      .from("neighborhoods")
-      .select("id, name")
-      .eq("invite_code", code.trim())
-      .maybeSingle();
-
-    if (lookupError || !neighborhood) {
-      setLoading(false);
-      setError(
-        "That invite code doesn't match a neighborhood. Double check with whoever invited you."
-      );
-      return;
-    }
-
-    const { error: insertError } = await supabase
-      .from("neighborhood_members")
-      .insert({
-        neighborhood_id: neighborhood.id,
-        user_id: user.id,
-        status: "pending",
-      });
-
-    setLoading(false);
-
-    if (insertError) {
-      if (insertError.code === "23505") {
-        setError("You've already requested to join this neighborhood.");
-      } else {
-        setError(insertError.message);
-      }
-      return;
-    }
-
-    router.push("/pending");
+  if (!user) {
+    router.push("/login");
+    return;
   }
+
+  const { data: neighborhood, error: lookupError } = await supabase
+    .from("neighborhoods")
+    .select("id, name")
+    .eq("invite_code", code.trim())
+    .maybeSingle();
+
+  if (lookupError || !neighborhood) {
+    setLoading(false);
+    setError(
+      "That invite code doesn't match a neighborhood. Double check with whoever invited you."
+    );
+    return;
+  }
+
+  const { error: insertError } = await supabase
+    .from("neighborhood_members")
+    .insert({
+      neighborhood_id: neighborhood.id,
+      user_id: user.id,
+      status: "active",
+    });
+
+  setLoading(false);
+
+  if (insertError) {
+    if (insertError.code === "23505") {
+      setError("You've already joined this neighborhood.");
+    } else {
+      setError(insertError.message);
+    }
+    return;
+  }
+
+  router.push("/browse");
+  router.refresh();
+}
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">

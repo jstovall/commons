@@ -20,12 +20,11 @@ export default async function AppLayout({
     .select("status")
     .eq("user_id", user.id);
 
-  const hasActive = memberships?.some((m) => m.status === "active");
-  const hasPending = memberships?.some((m) => m.status === "pending");
+const hasActive = memberships?.some((m) => m.status === "active");
 
-  if (!hasActive) {
-    redirect(hasPending ? "/pending" : "/join");
-  }
+if (!hasActive) {
+  redirect("/join");
+}
 
   const { count: unreadCount } = await supabase
     .from("notifications")

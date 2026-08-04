@@ -208,6 +208,147 @@ export async function respondToItemRequest(formData: FormData) {
   if (error) throw new Error(error.message);
   revalidatePath("/asks");
 }
+
+async function requireAdminMembership() {
+  const result = await requireActiveMembership();
+  if (result.membership.role !== "admin" && result.membership.role !== "moderator") {
+    redirect("/browse");
+  }
+  return result;
+}
+
+// --- Content moderation ------------------------------------------------
+
+export async function flagContent(formData: FormData) {
+  const { supabase, user } = await requireActiveMembership();
+  const targetType = formData.get("target_type") as "item" | "comment" | "loan_message";
+  const targetId = formData.get("target_id") as string;
+  const reason = (formData.get("reason") as string)?.trim();
+  if (!reason) return;
+
+  let neighborhoodId: string | null = null;
+
+  if (targetType === "item") {
+    const { data } = await supabase
+      .from("items")
+      .select("neighborhood_id")
+      .eq("id", targetId)
+      .maybeSingle();
+    neighborhoodId = data?.neighborhood_id ?? null;
+  } else if (targetType === "comment") {
+    const { data } = await supabase
+      .from("comments")
+      .select("neighborhood_id")
+      .eq("id", targetId)
+      .maybeSingle();
+    neighborhoodId = data?.neighborhood_id ?? null;
+  } else if (targetType === "loan_message") {
+    const { data } = await supabase
+      .from("loan_messages")
+      .select("loan_id")
+      .eq("id", targetId)
+      .maybeSingle();
+    if (data) {
+      const { data: loan } = await supabase
+        .from("loans")
+        .select("neighborhood_id")
+        .eq("id", data.loan_id)
+        .maybeSingle();
+      neighborhoodId = loan?.neighborhood_id ?? null;
+    }
+  }
+
+  if (!neighborhoodId) throw new Error("Could not determine neighborhood for report");
+
+  const { error } = await supabase.from("reports").insert({
+    neighborhood_id: neighborhoodId,
+    reporter_id: user.id,
+    target_type: targetType,
+    target_id: targetId,
+    reason,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/browse", "page");
+  revalidatePath("/loans", "layout");
+}
+
+export async function resolveReport(formData: FormData) {
+  const { supabase, user } = await requireAdminMembership();
+  const reportId = formData.get("report_id") as string;
+  const targetType = formData.get("target_type") as string;
+  const targetId = formData.get("target_id") as string;
+  const action = formData.get("action") as "dismiss" | "hide";
+
+  if (action === "hide") {
+    if (targetType === "item") {
+      await supabase.from("items").update({ content_flag: true }).eq("id", targetId);
+    } else if (targetType === "comment") {
+      await supabase.from("comments").update({ content_flag: true }).eq("id", targetId);
+    } else if (targetType === "loan_message") {
+      await supabase.from("loan_messages").delete().eq("id", targetId);
+    }
+  }
+
+  const { error } = await supabase
+    .from("reports")
+    .update({
+      status: action === "hide" ? "resolved" : "dismissed",
+      reviewed_by: user.id,
+      reviewed_at: new Date().toISOString(),
+    })
+    .eq("id", reportId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/reports", "page");
+}
+
+// --- Neighborhood admin --------------------------------------------------
+
+export async function removeMember(formData: FormData) {
+  const { supabase, membership } = await requireAdminMembership();
+  const memberUserId = formData.get("user_id") as string;
+
+  const { error } = await supabase
+    .from("neighborhood_members")
+    .update({ status: "removed" })
+    .eq("neighborhood_id", membership.neighborhood_id)
+    .eq("user_id", memberUserId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/members", "page");
+}
+
+export async function updateMemberRole(formData: FormData) {
+  const { supabase, membership } = await requireAdminMembership();
+  const memberUserId = formData.get("user_id") as string;
+  const role = formData.get("role") as "member" | "moderator" | "admin";
+
+  const { error } = await supabase
+    .from("neighborhood_members")
+    .update({ role })
+    .eq("neighborhood_id", membership.neighborhood_id)
+    .eq("user_id", memberUserId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/members", "page");
+}
+
+function generateInviteCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // no ambiguous chars (0/O, 1/I)
+  let code = "";
+  for (let i = 0; i < 8; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+export async function regenerateInviteCode(formData: FormData) {
+  const { supabase, membership } = await requireAdminMembership();
+  const newCode = generateInviteCode();
+
+  const { error } = await supabase
+    .from("neighborhoods")
+    .update({ invite_code: newCode })
+    .eq("id", membership.neighborhood_id);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/members", "page");
+}
+
 export async function updateProfile(formData: FormData) {
   const { supabase, user } = await requireActiveMembership();
 

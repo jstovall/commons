@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { toggleFavorite, addComment, requestLoan } from "@/app/actions";
+import { toggleFavorite, addComment, requestLoan, flagContent } from "@/app/actions";
 
 const statusStampClass: Record<string, string> = {
   available: "commons-stamp commons-stamp-teal",
@@ -8,6 +8,8 @@ const statusStampClass: Record<string, string> = {
   checked_out: "commons-stamp commons-stamp-brick",
   unavailable: "commons-stamp",
 };
+
+
 function formatDateTime(dateString: string) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -34,16 +36,17 @@ export default async function BrowsePage({
     .select("id, name")
     .order("name");
 
-  let query = supabase
-    .from("items")
-    .select(
-      `id, name, description, image_url, status, created_at, owner_id,
-       category:categories(name),
-       owner:profiles!items_owner_id_fkey(display_name),
-       comments(id, comment, created_at, user:profiles(display_name))`
-    )
-    .eq("is_active", true)
-    .order("created_at", { ascending: false });
+let query = supabase
+  .from("items")
+  .select(
+    `id, name, description, image_url, status, created_at, owner_id,
+     category:categories(name),
+     owner:profiles!items_owner_id_fkey(display_name),
+     comments(id, comment, created_at, content_flag, user_id, user:profiles(display_name))`
+  )
+  .eq("is_active", true)
+  .eq("content_flag", false)
+  .order("created_at", { ascending: false });
 
   if (q) query = query.ilike("name", `%${q}%`);
   if (category) query = query.eq("category_id", category);
@@ -145,7 +148,26 @@ const { data: myLoans } = await supabase
                   {item.status.replace("_", " ")}
                 </span>
               </div>
-
+{!isOwner && (
+  <details className="mt-2">
+    <summary className="cursor-pointer font-mono text-[10px] text-commons-ink/50">
+      🚩 report this item
+    </summary>
+    <form action={flagContent} className="mt-1 flex gap-2">
+      <input type="hidden" name="target_type" value="item" />
+      <input type="hidden" name="target_id" value={item.id} />
+      <input
+        name="reason"
+        required
+        placeholder="Why report this item?"
+        className="commons-input flex-1 text-xs"
+      />
+      <button className="commons-button commons-button-secondary text-xs">
+        Submit
+      </button>
+    </form>
+  </details>
+)}
               {!isOwner && item.status === "available" && !myLoan && (
                 <form action={requestLoan} className="mt-4 flex gap-2">
                   <input type="hidden" name="item_id" value={item.id} />
@@ -179,17 +201,41 @@ const { data: myLoans } = await supabase
                   {item.comments?.length === 1 ? "" : "s"}
                 </summary>
                 <div className="mt-2 flex flex-col gap-2 border-t-2 border-dashed border-commons-ink/40 pt-2">
-                  {item.comments?.map((c) => (
-  <p key={c.id} className="text-sm">
-    <span className="font-mono text-xs font-bold">
-      {c.user?.display_name}:
-    </span>{" "}
-    {c.comment}{" "}
-    <span className="font-mono text-[10px] text-commons-ink/50">
-      · {formatDateTime(c.created_at)}
-    </span>
-  </p>
-))}
+{item.comments
+  ?.filter((c) => !c.content_flag)
+  .map((c) => (
+    <div key={c.id}>
+      <p className="text-sm">
+        <span className="font-mono text-xs font-bold">
+          {c.user?.display_name}:
+        </span>{" "}
+        {c.comment}{" "}
+        <span className="font-mono text-[10px] text-commons-ink/50">
+          · {formatDateTime(c.created_at)}
+        </span>
+      </p>
+      {c.user_id !== user.id && (
+        <details className="mt-0.5">
+          <summary className="cursor-pointer font-mono text-[10px] text-commons-ink/50">
+            🚩 report
+          </summary>
+          <form action={flagContent} className="mt-1 flex gap-2">
+            <input type="hidden" name="target_type" value="comment" />
+            <input type="hidden" name="target_id" value={c.id} />
+            <input
+              name="reason"
+              required
+              placeholder="Why report this comment?"
+              className="commons-input flex-1 text-xs"
+            />
+            <button className="commons-button commons-button-secondary text-xs">
+              Submit
+            </button>
+          </form>
+        </details>
+      )}
+    </div>
+  ))}
                   <form action={addComment} className="mt-1 flex gap-2">
                     <input type="hidden" name="item_id" value={item.id} />
                     <input

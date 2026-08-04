@@ -1,6 +1,8 @@
+import { respondToLoan, sendLoanMessage, flagContent } from "@/app/actions";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
-import { respondToLoan, sendLoanMessage } from "@/app/actions";
+
+
 
 function formatDateTime(dateString: string) {
   return new Intl.DateTimeFormat("en-US", {
@@ -169,6 +171,26 @@ export default async function LoanDetailPage({
               >
                 {formatDateTime(m.created_at)}
               </p>
+            {!fromMe && (
+  <details className="mt-1">
+    <summary className="cursor-pointer font-mono text-[10px] opacity-60">
+      🚩 report
+    </summary>
+    <form action={flagContent} className="mt-1 flex gap-1">
+      <input type="hidden" name="target_type" value="loan_message" />
+      <input type="hidden" name="target_id" value={m.id} />
+      <input
+        name="reason"
+        required
+        placeholder="Reason"
+        className="commons-input flex-1 text-xs"
+      />
+      <button className="commons-button commons-button-secondary text-xs">
+        Send
+      </button>
+    </form>
+  </details>
+)}
             </div>
           );
         })}
