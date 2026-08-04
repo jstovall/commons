@@ -33,21 +33,16 @@ export default function LoginForm() {
 
   return (
     <>
-      <h1 className="mb-1 text-2xl font-semibold text-commons-dark">
-        Welcome to Commons
-      </h1>
-      <p className="mb-6 text-sm text-gray-500">
-        Sign in to share and borrow with your neighbors.
-      </p>
+      <p className="mb-6 text-sm">Sign in to share and borrow with your neighbors.</p>
 
-      <form onSubmit={handleSignIn} className="flex flex-col gap-4">
+      <form onSubmit={handleSignIn} className="flex flex-col gap-3">
         <input
           type="email"
           required
           placeholder="Email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-commons focus:outline-none"
+          className="commons-input text-sm"
         />
         <input
           type="password"
@@ -55,25 +50,21 @@ export default function LoginForm() {
           placeholder="Password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-commons focus:outline-none"
+          className="commons-input text-sm"
         />
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
+        {error && <p className="font-mono text-xs text-commons-brick">{error}</p>}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="rounded-lg bg-commons px-3 py-2 text-sm font-medium text-white transition hover:bg-commons-dark disabled:opacity-50"
-        >
+        <button type="submit" disabled={loading} className="commons-button text-sm disabled:opacity-50">
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-gray-500">
+      <p className="mt-4 text-center text-sm">
         New here?{" "}
-      <a href="/signup" className="font-medium text-commons hover:underline">
-      Create an account
-      </a>
+        <a href="/signup" className="font-mono text-xs font-bold underline">
+          Create an account
+        </a>
       </p>
     </>
   );
