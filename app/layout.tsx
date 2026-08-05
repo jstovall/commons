@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Caveat, Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
+import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
 
 const caveat = Caveat({
   subsets: ["latin"],
@@ -30,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#5C6B3E",
+  themeColor: "#4A8B8C",
 };
 
 export default function RootLayout({
@@ -41,6 +42,7 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${caveat.variable} ${spaceGrotesk.variable} ${spaceMono.variable}`}>
       <body className="min-h-screen bg-commons-cream font-body text-commons-ink antialiased">
+         <ServiceWorkerRegistration />
         {children}
       </body>
     </html>
