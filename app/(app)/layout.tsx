@@ -17,10 +17,12 @@ export default async function AppLayout({
 
   const { data: memberships } = await supabase
     .from("neighborhood_members")
-    .select("status, role")
+    .select("status, role, neighborhood:neighborhoods(name)")
     .eq("user_id", user.id);
 
 const hasActive = memberships?.some((m) => m.status === "active");
+const activeMembership = memberships?.find((m) => m.status === "active");
+const neighborhoodName = activeMembership?.neighborhood?.name;
 
 if (!hasActive) {
   redirect("/join");
@@ -40,7 +42,7 @@ const isAdmin = memberships?.some(
     <div className="min-h-screen pb-24">
       <header className="flex items-center justify-between border-b-2 border-commons-ink bg-commons-teal px-5 py-3">
         <span className="commons-heading text-3xl leading-none text-commons-cream">
-          Commons
+            {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
         </span>
         <Link href="/notifications" className="relative text-2xl text-commons-cream">
           🔔
