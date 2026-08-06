@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import { getCurrentMembership } from "@/lib/current-neighborhood";
 
 export default async function AdminLayout({
   children,
@@ -13,12 +14,7 @@ export default async function AdminLayout({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: membership } = await supabase
-    .from("neighborhood_members")
-    .select("role")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
+  const { current: membership } = await getCurrentMembership(user.id);
 
   if (!membership || (membership.role !== "admin" && membership.role !== "moderator")) {
     redirect("/browse");
@@ -27,15 +23,15 @@ export default async function AdminLayout({
   return (
     <div>
       <div className="mb-6 flex gap-2">
-  {membership.role === "admin" && (
-    <Link href="/admin/members" className="commons-button commons-button-secondary text-xs">
-      Members
-    </Link>
-  )}
-  <Link href="/admin/reports" className="commons-button commons-button-secondary text-xs">
-    Reports
-  </Link>
-</div>
+        {membership.role === "admin" && (
+          <Link href="/admin/members" className="commons-button commons-button-secondary text-xs">
+            Members
+          </Link>
+        )}
+        <Link href="/admin/reports" className="commons-button commons-button-secondary text-xs">
+          Reports
+        </Link>
+      </div>
       {children}
     </div>
   );
