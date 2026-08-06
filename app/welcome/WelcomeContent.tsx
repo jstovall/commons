@@ -51,15 +51,15 @@ export default function WelcomeContent({
     setDeferredPrompt(null);
   }
 
-  function handleContinue() {
-    acceptTermsCookie();
-    if (isLoggedIn) {
-      window.location.href = "/browse";
-      return;
-    }
-    const codeParam = code ? `?code=${encodeURIComponent(code)}` : "";
-    window.location.href = code ? `/signup${codeParam}` : "/login";
+function handleContinue() {
+  acceptTermsCookie();
+  if (isLoggedIn) {
+    window.location.href = code ? `/join?code=${encodeURIComponent(code)}` : "/browse";
+    return;
   }
+  const codeParam = code ? `?code=${encodeURIComponent(code)}` : "";
+  window.location.href = code ? `/signup${codeParam}` : "/login";
+}
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-10">

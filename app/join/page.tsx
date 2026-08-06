@@ -26,13 +26,15 @@ export default function JoinPage() {
       return;
     }
 
-    const { data: neighborhood, error: lookupError } = await supabase
-      .from("neighborhoods")
-      .select("id, name")
-      .eq("invite_code", code.trim())
-      .maybeSingle();
+const { data: neighborhood, error: lookupError } = await supabase
+  .from("neighborhoods")
+  .select("id, name")
+  .eq("invite_code", code.trim())
+  .maybeSingle();
 
-    if (lookupError || !neighborhood) {
+console.log("Join lookup:", { typedCode: code.trim(), neighborhood, lookupError });
+
+if (lookupError || !neighborhood) {
       setLoading(false);
       setError(
         "That invite code doesn't match a neighborhood. Double check with whoever invited you."
@@ -40,13 +42,15 @@ export default function JoinPage() {
       return;
     }
 
-    const { error: insertError } = await supabase
-      .from("neighborhood_members")
-      .insert({
-        neighborhood_id: neighborhood.id,
-        user_id: user.id,
-        status: "active",
-      });
+const { error: insertError } = await supabase
+  .from("neighborhood_members")
+  .insert({
+    neighborhood_id: neighborhood.id,
+    user_id: user.id,
+    status: "active",
+  });
+
+console.log("Join insert error:", insertError);
 
     setLoading(false);
 
