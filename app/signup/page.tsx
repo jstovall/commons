@@ -1,19 +1,35 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function SignupPage() {
+function SignupInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const code = searchParams.get("code");
   const supabase = createClient();
 
+  const [neighborhoodName, setNeighborhoodName] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [checkEmail, setCheckEmail] = useState(false);
+
+  useEffect(() => {
+    if (!code) return;
+    supabase
+      .rpc("neighborhood_by_invite_code", { _code: code.toUpperCase() })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("neighborhood_by_invite_code RPC error:", error);
+          return;
+        }
+        setNeighborhoodName(data?.[0]?.name ?? null);
+      });
+  }, [code, supabase]);
 
   async function handleSignUp(e: React.FormEvent) {
     e.preventDefault();
@@ -32,8 +48,10 @@ export default function SignupPage() {
       return;
     }
 
+    const joinUrl = code ? `/join?code=${encodeURIComponent(code)}` : "/join";
+
     if (data.session) {
-      router.push("/join");
+      router.push(joinUrl);
       router.refresh();
     } else {
       setCheckEmail(true);
@@ -43,7 +61,9 @@ export default function SignupPage() {
   if (checkEmail) {
     return (
       <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
-        <span className="commons-heading mb-1 self-center text-4xl">commons</span>
+        <span className="commons-heading mb-1 self-center text-4xl">
+          {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
+        </span>
         <div className="commons-card-flat mt-4 p-6 text-center">
           <p className="commons-heading text-xl">Check your email</p>
           <p className="mt-2 text-sm">
@@ -57,7 +77,9 @@ export default function SignupPage() {
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
-      <span className="commons-heading mb-1 self-center text-4xl">commons</span>
+      <span className="commons-heading mb-1 self-center text-4xl">
+        {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
+      </span>
       <div className="commons-card-flat mt-4 p-6">
         <p className="mb-6 text-sm">Join Commons to share and borrow with your neighbors.</p>
 
@@ -97,11 +119,22 @@ export default function SignupPage() {
 
         <p className="mt-4 text-center text-sm">
           Already have an account?{" "}
-          <a href="/login" className="font-mono text-xs font-bold underline">
+          <a
+            href={code ? `/login?code=${encodeURIComponent(code)}` : "/login"}
+            className="font-mono text-xs font-bold underline"
+          >
             Sign in
           </a>
         </p>
       </div>
     </main>
+  );
+}
+
+export default function SignupPage() {
+  return (
+    <Suspense fallback={null}>
+      <SignupInner />
+    </Suspense>
   );
 }

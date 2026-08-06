@@ -1,16 +1,32 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 
-export default function JoinPage() {
+function JoinInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlCode = searchParams.get("code");
   const supabase = createClient();
 
-  const [code, setCode] = useState("");
+  const [neighborhoodName, setNeighborhoodName] = useState<string | null>(null);
+  const [code, setCode] = useState(urlCode ?? "");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!urlCode) return;
+    supabase
+      .rpc("neighborhood_by_invite_code", { _code: urlCode.toUpperCase() })
+      .then(({ data, error }) => {
+        if (error) {
+          console.error("neighborhood_by_invite_code RPC error:", error);
+          return;
+        }
+        setNeighborhoodName(data?.[0]?.name ?? null);
+      });
+  }, [urlCode, supabase]);
 
   async function handleJoin(e: React.FormEvent) {
     e.preventDefault();
@@ -26,15 +42,13 @@ export default function JoinPage() {
       return;
     }
 
-const { data: neighborhood, error: lookupError } = await supabase
-  .from("neighborhoods")
-  .select("id, name")
-  .eq("invite_code", code.trim())
-  .maybeSingle();
+    const { data: neighborhood, error: lookupError } = await supabase
+      .from("neighborhoods")
+      .select("id, name")
+      .eq("invite_code", code.trim().toUpperCase())
+      .maybeSingle();
 
-console.log("Join lookup:", { typedCode: code.trim(), neighborhood, lookupError });
-
-if (lookupError || !neighborhood) {
+    if (lookupError || !neighborhood) {
       setLoading(false);
       setError(
         "That invite code doesn't match a neighborhood. Double check with whoever invited you."
@@ -42,15 +56,13 @@ if (lookupError || !neighborhood) {
       return;
     }
 
-const { error: insertError } = await supabase
-  .from("neighborhood_members")
-  .insert({
-    neighborhood_id: neighborhood.id,
-    user_id: user.id,
-    status: "active",
-  });
-
-console.log("Join insert error:", insertError);
+    const { error: insertError } = await supabase
+      .from("neighborhood_members")
+      .insert({
+        neighborhood_id: neighborhood.id,
+        user_id: user.id,
+        status: "active",
+      });
 
     setLoading(false);
 
@@ -69,7 +81,9 @@ console.log("Join insert error:", insertError);
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
-      <span className="commons-heading mb-1 self-center text-4xl">commons</span>
+      <span className="commons-heading mb-1 self-center text-4xl">
+        {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
+      </span>
       <div className="commons-card-flat mt-4 p-6">
         <p className="mb-6 text-sm">
           Enter the invite code shared by a neighbor or your community
@@ -82,7 +96,7 @@ console.log("Join insert error:", insertError);
             required
             placeholder="Invite code"
             value={code}
-            onChange={(e) => setCode(e.target.value)}
+            onChange={(e) => setCode(e.target.value.toUpperCase())}
             className="commons-input text-sm uppercase"
           />
 
@@ -94,5 +108,13 @@ console.log("Join insert error:", insertError);
         </form>
       </div>
     </main>
+  );
+}
+
+export default function JoinPage() {
+  return (
+    <Suspense fallback={null}>
+      <JoinInner />
+    </Suspense>
   );
 }

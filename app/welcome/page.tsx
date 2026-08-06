@@ -13,7 +13,7 @@ export default async function WelcomePage({
 
   if (code) {
     const { data, error } = await supabase.rpc("neighborhood_by_invite_code", {
-      _code: code,
+      _code: code.toUpperCase(),
     });
     if (error) console.error("neighborhood_by_invite_code RPC error:", error);
     neighborhoodName = data?.[0]?.name ?? null;
