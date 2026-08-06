@@ -94,8 +94,7 @@ export default function WelcomeContent({
           </li>
         </ul>
         <p className="mt-3 text-sm">
-          Not a Central Tacoma resident? Starting in central but spreading
-          out!{" "}
+          Not a Central Tacoma resident? {" "}
           <a
             href="mailto:stovall.joshua@gmail.com?subject=Requesting%20a%20Commons%20invite%20link"
             className="font-mono text-xs font-bold underline"
@@ -116,7 +115,7 @@ export default function WelcomeContent({
             Be kind (hateful, bigoted, harmful and generally offensive content
             is prohibited. If you&apos;re not sure if something you want to
             post is offensive, that&apos;s probably a good indicator that you
-            should keep it to yourself or save for your NextDoor post)
+            should keep it to yourself)
           </li>
           <li>
             Don&apos;t share items that are illegal or specially regulated
@@ -124,11 +123,11 @@ export default function WelcomeContent({
           </li>
           <li>
             Don&apos;t borrow items to do illegal things (e.g. borrowing a
-            ski-mask and duffle bag to aid in the robbery of an art gallery)
+            ski-mask and duffle bag to use in a robbery)
           </li>
           <li>
             Quickly return items after use (indefinite borrowing is the same
-            as stealing — don&apos;t be that person)
+            as stealing)
           </li>
           <li>
             Take good care of the borrowed items and be willing to

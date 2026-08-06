@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { resolveReport } from "@/app/actions";
+import { getCurrentMembership } from "@/lib/current-neighborhood";
 
 export default async function AdminReportsPage() {
   const supabase = await createClient();
@@ -9,13 +10,8 @@ export default async function AdminReportsPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: myMembership } = await supabase
-    .from("neighborhood_members")
-    .select("neighborhood_id")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
-  if (!myMembership) redirect("/browse");
+const { current: myMembership } = await getCurrentMembership(user.id);
+if (!myMembership) redirect("/browse");
 
   const { data: reports, error } = await supabase
     .from("reports")

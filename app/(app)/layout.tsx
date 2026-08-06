@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import BottomNav from "./BottomNav";
+import { getCurrentMembership } from "@/lib/current-neighborhood";
 
 export default async function AppLayout({
   children,
@@ -15,22 +16,11 @@ export default async function AppLayout({
 
   if (!user) redirect("/login");
 
-  const { data: memberships } = await supabase
-    .from("neighborhood_members")
-    .select("status, role, neighborhood:neighborhoods(name)")
-    .eq("user_id", user.id);
+const { current } = await getCurrentMembership(user.id);
+if (!current) redirect("/join");
 
-const hasActive = memberships?.some((m) => m.status === "active");
-const activeMembership = memberships?.find((m) => m.status === "active");
-const neighborhoodName = activeMembership?.neighborhood?.name;
-
-if (!hasActive) {
-  redirect("/join");
-}
-
-const isAdmin = memberships?.some(
-  (m) => m.status === "active" && (m.role === "admin" || m.role === "moderator")
-);
+const isAdmin = current.role === "admin" || current.role === "moderator";
+const neighborhoodName = current.neighborhood?.name;
 
   const { count: unreadCount } = await supabase
     .from("notifications")
@@ -42,7 +32,7 @@ const isAdmin = memberships?.some(
     <div className="min-h-screen pb-24">
       <header className="flex items-center justify-between border-b-2 border-commons-ink bg-commons-teal px-5 py-3">
         <span className="commons-heading text-3xl leading-none text-commons-cream">
-            {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
+          {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
         </span>
         <Link href="/notifications" className="relative text-2xl text-commons-cream">
           🔔

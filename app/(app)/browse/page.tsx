@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { toggleFavorite, addComment, requestLoan, flagContent } from "@/app/actions";
+import { getCurrentMembership } from "@/lib/current-neighborhood";
 
 const statusStampClass: Record<string, string> = {
   available: "commons-stamp commons-stamp-teal",
@@ -31,6 +32,9 @@ export default async function BrowsePage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { current: membership } = await getCurrentMembership(user.id);
+if (!membership) redirect("/join");
+
   const { data: categories } = await supabase
     .from("categories")
     .select("id, name")
@@ -46,6 +50,7 @@ let query = supabase
   )
   .eq("is_active", true)
   .eq("content_flag", false)
+  .eq("neighborhood_id", membership.neighborhood_id)
   .order("created_at", { ascending: false });
 
   if (q) query = query.ilike("name", `%${q}%`);
@@ -62,6 +67,7 @@ let query = supabase
     ((favorites ?? []) as { item_id: string }[]).map((f) => f.item_id)
   );
 
+  
 const { data: myLoans } = await supabase
   .from("loans")
   .select("id, item_id, status")

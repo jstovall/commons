@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { removeMember, updateMemberRole, regenerateInviteCode } from "@/app/actions";
+import { getCurrentMembership } from "@/lib/current-neighborhood";
 
 export default async function AdminMembersPage() {
   const supabase = await createClient();
@@ -9,14 +10,15 @@ export default async function AdminMembersPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-const { data: myMembership } = await supabase
-  .from("neighborhood_members")
-  .select("neighborhood_id, role, neighborhood:neighborhoods(name, invite_code)")
-  .eq("user_id", user.id)
-  .eq("status", "active")
-  .maybeSingle();
+const { current: myMembership } = await getCurrentMembership(user.id);
 if (!myMembership) redirect("/browse");
 if (myMembership.role !== "admin") redirect("/admin/reports");
+
+const { data: neighborhoodDetails } = await supabase
+  .from("neighborhoods")
+  .select("name, invite_code")
+  .eq("id", myMembership.neighborhood_id)
+  .maybeSingle();
 
   const { data: members, error } = await supabase
     .from("neighborhood_members")
@@ -29,13 +31,13 @@ if (myMembership.role !== "admin") redirect("/admin/reports");
   return (
     <div>
       <h2 className="commons-heading mb-1 text-3xl">
-        {myMembership.neighborhood?.name} Commons
+        {neighborhoodDetails?.name} Commons
       </h2>
 
       <div className="commons-card-flat mt-4 p-4">
         <p className="font-mono text-xs font-bold uppercase">Invite code</p>
         <p className="commons-heading text-2xl">
-          {myMembership.neighborhood?.invite_code}
+          {neighborhoodDetails?.invite_code}
         </p>
         <form action={regenerateInviteCode} className="mt-2">
           <button className="commons-button commons-button-secondary text-xs">

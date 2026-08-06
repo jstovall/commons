@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database.types";
+import { cookies } from "next/headers";
+import { getCurrentMembership, CURRENT_NEIGHBORHOOD_COOKIE } from "@/lib/current-neighborhood";
 
 async function requireActiveMembership() {
   const supabase = await createClient();
@@ -12,17 +14,42 @@ async function requireActiveMembership() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
+  const { current } = await getCurrentMembership(user.id);
+  if (!current) redirect("/join");
+
+  return { supabase, user, membership: current };
+}
+
+// --- Neighborhood Switch -------------------------------------------------------------
+
+export async function switchNeighborhood(formData: FormData) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) redirect("/login");
+
+  const neighborhoodId = formData.get("neighborhood_id") as string;
+
   const { data: membership } = await supabase
     .from("neighborhood_members")
-    .select("neighborhood_id, role")
+    .select("neighborhood_id")
     .eq("user_id", user.id)
+    .eq("neighborhood_id", neighborhoodId)
     .eq("status", "active")
-    .limit(1)
     .maybeSingle();
 
-  if (!membership) redirect("/join");
-  return { supabase, user, membership };
+  if (!membership) throw new Error("You're not an active member of that neighborhood");
+
+  const cookieStore = await cookies();
+  cookieStore.set(CURRENT_NEIGHBORHOOD_COOKIE, neighborhoodId, {
+    path: "/",
+    maxAge: 60 * 60 * 24 * 365,
+  });
+
+  redirect("/browse");
 }
+
 
 // --- Items -------------------------------------------------------------
 

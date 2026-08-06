@@ -1,6 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { updateProfile, signOutAction } from "@/app/actions";
+import { getCurrentMembership } from "@/lib/current-neighborhood";
+import { updateProfile, signOutAction, switchNeighborhood } from "@/app/actions";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -15,12 +16,7 @@ export default async function ProfilePage() {
     .eq("id", user.id)
     .maybeSingle();
 
-  const { data: membership } = await supabase
-    .from("neighborhood_members")
-    .select("role, neighborhood:neighborhoods(name)")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
+const { memberships, current } = await getCurrentMembership(user.id);
 
   const initials = (profile?.display_name ?? "?")
     .split(" ")
@@ -64,18 +60,42 @@ export default async function ProfilePage() {
         </form>
       </div>
 
-      {membership && (
-        <div>
-          <h3 className="mb-3 font-mono text-sm font-bold uppercase">
-            {membership.neighborhood?.name} Commons
-          </h3>
-          <div className="commons-card-flat p-4">
-            <span className="commons-stamp commons-stamp-olive inline-block">
-              {membership.role}
-            </span>
+{memberships.length > 0 && (
+  <div>
+    <h3 className="mb-3 font-mono text-sm font-bold uppercase">
+      {memberships.length > 1 ? "Your neighborhoods" : "Your neighborhood"}
+    </h3>
+    <div className="flex flex-col gap-3">
+      {memberships.map((m) => {
+        const isCurrent = m.neighborhood_id === current?.neighborhood_id;
+        return (
+          <div key={m.neighborhood_id} className="commons-card-flat flex items-center justify-between p-4">
+            <div>
+              <p className="commons-heading text-lg leading-tight">
+                {m.neighborhood?.name} Commons
+              </p>
+              <span className="commons-stamp commons-stamp-olive mt-1 inline-block">
+                {m.role}
+              </span>
+            </div>
+            {isCurrent ? (
+              <span className="font-mono text-xs font-bold text-commons-teal">
+                current
+              </span>
+            ) : (
+              <form action={switchNeighborhood}>
+                <input type="hidden" name="neighborhood_id" value={m.neighborhood_id} />
+                <button className="commons-button commons-button-secondary text-xs">
+                  Switch
+                </button>
+              </form>
+            )}
           </div>
-        </div>
-      )}
+        );
+      })}
+    </div>
+  </div>
+)}
 
       <form action={signOutAction}>
         <button className="commons-button commons-button-secondary self-start text-sm">

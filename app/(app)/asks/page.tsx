@@ -7,6 +7,7 @@ import {
   flagContent,
   startAskThread,
 } from "@/app/actions";
+import { getCurrentMembership } from "@/lib/current-neighborhood";
 
 const statusStampClass: Record<string, string> = {
   open: "commons-stamp commons-stamp-teal",
@@ -28,7 +29,8 @@ export default async function AsksPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
-
+const { current: membership } = await getCurrentMembership(user.id);
+if (!membership) redirect("/join");
   const { data: categories } = await supabase
     .from("categories")
     .select("id, name")
@@ -53,6 +55,7 @@ export default async function AsksPage() {
        )`
     )
     .eq("content_flag", false)
+    .eq("neighborhood_id", membership.neighborhood_id)
     .order("created_at", { ascending: false });
   if (asksError) console.error("Asks query error:", asksError);
 

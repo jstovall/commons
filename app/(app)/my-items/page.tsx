@@ -6,6 +6,7 @@ import {
   deleteItem,
   respondToLoan,
 } from "@/app/actions";
+import { getCurrentMembership } from "@/lib/current-neighborhood";
 
 export default async function MyItemsPage() {
   const supabase = await createClient();
@@ -13,6 +14,9 @@ export default async function MyItemsPage() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
+
+  const { current: membership } = await getCurrentMembership(user.id);
+if (!membership) redirect("/join");
 
   const { data: categories } = await supabase
     .from("categories")
@@ -26,6 +30,7 @@ const { data: items, error: itemsError } = await supabase
   )
   .eq("owner_id", user.id)
   .eq("is_active", true)
+  .eq("neighborhood_id", membership.neighborhood_id)
   .order("created_at", { ascending: false });
 if (itemsError) console.error("My-items query error:", itemsError);
 
@@ -48,6 +53,7 @@ const sortedGroups = Array.from(groupedItems.entries()).sort(([a], [b]) =>
     )
     .eq("owner_id", user.id)
     .in("status", ["requested", "approved", "checked_out"])
+    .eq("neighborhood_id", membership.neighborhood_id)
     .order("requested_at", { ascending: false });
   if (loansError) console.error("Incoming loans query error:", loansError);
 
