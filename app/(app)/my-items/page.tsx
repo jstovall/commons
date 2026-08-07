@@ -7,6 +7,7 @@ import {
   respondToLoan,
 } from "@/app/actions";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
+import ImageFileInput from "./ImageFileInput";
 
 export default async function MyItemsPage() {
   const supabase = await createClient();
@@ -85,15 +86,7 @@ const sortedGroups = Array.from(groupedItems.entries()).sort(([a], [b]) =>
     placeholder="Description"
     className="commons-input text-sm"
   />
-  <label className="font-mono text-xs font-bold uppercase">
-    Photo (optional)
-    <input
-      type="file"
-      name="image_file"
-      accept="image/*"
-      className="commons-input mt-1 w-full text-sm font-body normal-case"
-    />
-  </label>
+<ImageFileInput name="image_file" label="Photo (optional)" />
   <button className="commons-button self-start text-sm">
     Post item
   </button>
@@ -227,15 +220,7 @@ const sortedGroups = Array.from(groupedItems.entries()).sort(([a], [b]) =>
       className="h-24 w-24 rounded-md border-2 border-commons-ink object-cover"
     />
   )}
-  <label className="font-mono text-xs font-bold uppercase">
-    Replace photo (optional)
-    <input
-      type="file"
-      name="image_file"
-      accept="image/*"
-      className="commons-input mt-1 w-full text-sm font-body normal-case"
-    />
-  </label>
+<ImageFileInput name="image_file" label="Replace photo (optional)" />
   <button className="commons-button self-start text-xs">
     Save
   </button>
