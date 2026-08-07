@@ -44,7 +44,7 @@ const neighborhoodName = current.neighborhood?.name;
         </Link>
       </header>
 
-      <main className="px-4 py-6">{children}</main>
+<main className="mx-auto w-full max-w-5xl px-4 py-6">{children}</main>
 
 <BottomNav isAdmin={isAdmin} />
     </div>

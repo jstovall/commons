@@ -106,7 +106,7 @@ const { data: myLoans } = await supabase
         <button className="commons-button text-sm">Search</button>
       </form>
 
-      <div className="flex flex-col gap-8">
+<div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {items?.map((item) => {
           const isOwner = item.owner_id === user.id;
           const isFavorited = favoriteIds.has(item.id);

@@ -177,7 +177,7 @@ const sortedGroups = Array.from(groupedItems.entries()).sort(([a], [b]) =>
       <h3 className="mb-4 border-b-2 border-dashed border-commons-ink/40 pb-1 font-mono text-sm font-bold uppercase tracking-wide">
         {groupName}
       </h3>
-      <div className="flex flex-col gap-6">
+<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {groupItems?.map((item) => (
           <div key={item.id} className="commons-card p-4">
             <div className="commons-tape" />
