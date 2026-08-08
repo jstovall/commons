@@ -8,6 +8,7 @@ import {
 } from "@/app/actions";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
 import ImageFileInput from "./ImageFileInput";
+import NewItemForm from "./NewItemForm";
 
 export default async function MyItemsPage() {
   const supabase = await createClient();
@@ -62,36 +63,7 @@ const sortedGroups = Array.from(groupedItems.entries()).sort(([a], [b]) =>
     <div>
       <h2 className="commons-heading mb-4 text-3xl">What I&apos;m sharing</h2>
 
-      <details className="commons-card mb-8 p-4">
-        <summary className="cursor-pointer font-mono text-sm font-bold">
-          + post a new item
-        </summary>
-<form action={createItem} className="mt-3 flex flex-col gap-3">
-  <input
-    name="name"
-    required
-    placeholder="Item name"
-    className="commons-input text-sm"
-  />
-  <select name="category_id" className="commons-input text-sm">
-    <option value="">Choose a category</option>
-    {categories?.map((c) => (
-      <option key={c.id} value={c.id}>
-        {c.name}
-      </option>
-    ))}
-  </select>
-  <textarea
-    name="description"
-    placeholder="Description"
-    className="commons-input text-sm"
-  />
-<ImageFileInput name="image_file" label="Photo (optional)" />
-  <button className="commons-button self-start text-sm">
-    Post item
-  </button>
-</form>
-      </details>
+<NewItemForm categories={categories ?? []} />
 
       {incomingLoans && incomingLoans.length > 0 && (
         <div className="mb-8">
