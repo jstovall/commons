@@ -36,11 +36,16 @@ function SignupInner() {
     setLoading(true);
     setError(null);
 
-    const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: { data: { display_name: name } },
-    });
+const { data, error } = await supabase.auth.signUp({
+  email,
+  password,
+  options: {
+    data: { display_name: name },
+    emailRedirectTo: `${window.location.origin}${
+      code ? `/join?code=${encodeURIComponent(code)}` : "/login"
+    }`,
+  },
+});
 
     setLoading(false);
     if (error) {

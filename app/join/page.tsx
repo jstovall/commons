@@ -37,10 +37,10 @@ function JoinInner() {
       data: { user },
     } = await supabase.auth.getUser();
 
-    if (!user) {
-      router.push("/login");
-      return;
-    }
+if (!user) {
+  router.push(urlCode ? `/login?code=${encodeURIComponent(urlCode)}` : "/login");
+  return;
+}
 
     const { data: neighborhood, error: lookupError } = await supabase
       .from("neighborhoods")
