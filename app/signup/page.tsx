@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 function SignupInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const code = searchParams.get("code");
+  const code = searchParams.get("invite");
   const supabase = createClient();
 
   const [neighborhoodName, setNeighborhoodName] = useState<string | null>(null);
@@ -42,7 +42,7 @@ const { data, error } = await supabase.auth.signUp({
   options: {
     data: { display_name: name },
     emailRedirectTo: `${window.location.origin}${
-      code ? `/join?code=${encodeURIComponent(code)}` : "/login"
+      code ? `/join?invite=${encodeURIComponent(code)}` : "/login"
     }`,
   },
 });
@@ -53,7 +53,7 @@ const { data, error } = await supabase.auth.signUp({
       return;
     }
 
-    const joinUrl = code ? `/join?code=${encodeURIComponent(code)}` : "/join";
+    const joinUrl = code ? `/join?invite=${encodeURIComponent(code)}` : "/join";
 
     if (data.session) {
       router.push(joinUrl);
@@ -125,7 +125,7 @@ const { data, error } = await supabase.auth.signUp({
         <p className="mt-4 text-center text-sm">
           Already have an account?{" "}
           <a
-            href={code ? `/login?code=${encodeURIComponent(code)}` : "/login"}
+            href={code ? `/login?invite=${encodeURIComponent(code)}` : "/login"}
             className="font-mono text-xs font-bold underline"
           >
             Sign in

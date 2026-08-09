@@ -7,7 +7,7 @@ import { createClient } from "@/lib/supabase/client";
 export default function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const code = searchParams.get("code");
+  const code = searchParams.get("invite");
   const supabase = createClient();
 
   const [email, setEmail] = useState("");
@@ -64,7 +64,7 @@ export default function LoginForm() {
       <p className="mt-4 text-center text-sm">
         New here?{" "}
         <a
-          href={code ? `/signup?code=${encodeURIComponent(code)}` : "/signup"}
+          href={code ? `/signup?invite=${encodeURIComponent(code)}` : "/signup"}
           className="font-mono text-xs font-bold underline"
         >
           Create an account

@@ -7,9 +7,8 @@ import { createClient } from "@/lib/supabase/client";
 function JoinInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const urlCode = searchParams.get("code");
+  const urlCode = searchParams.get("invite");
   const supabase = createClient();
-
   const [neighborhoodName, setNeighborhoodName] = useState<string | null>(null);
   const [code, setCode] = useState(urlCode ?? "");
   const [error, setError] = useState<string | null>(null);
@@ -38,7 +37,7 @@ function JoinInner() {
     } = await supabase.auth.getUser();
 
 if (!user) {
-  router.push(urlCode ? `/login?code=${encodeURIComponent(urlCode)}` : "/login");
+  router.push(urlCode ? `/login?invite=${encodeURIComponent(urlCode)}` : "/login");
   return;
 }
 

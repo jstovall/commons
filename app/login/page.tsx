@@ -5,9 +5,9 @@ import LoginForm from "./LoginForm";
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ code?: string; next?: string }>;
+  searchParams: Promise<{ invite?: string; next?: string }>;
 }) {
-  const { code } = await searchParams;
+  const { invite: code } = await searchParams;
   let neighborhoodName: string | null = null;
 
   if (code) {

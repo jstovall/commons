@@ -4,9 +4,9 @@ import WelcomeContent from "./WelcomeContent";
 export default async function WelcomePage({
   searchParams,
 }: {
-  searchParams: Promise<{ code?: string }>;
+searchParams: Promise<{ invite?: string }>;
 }) {
-  const { code } = await searchParams;
+  const { invite: code } = await searchParams;
   let neighborhoodName: string | null = null;
 
   const supabase = await createClient();

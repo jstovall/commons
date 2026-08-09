@@ -54,10 +54,10 @@ export default function WelcomeContent({
 function handleContinue() {
   acceptTermsCookie();
   if (isLoggedIn) {
-    window.location.href = code ? `/join?code=${encodeURIComponent(code)}` : "/browse";
+    window.location.href = code ? `/join?invite=${encodeURIComponent(code)}` : "/browse";
     return;
   }
-  const codeParam = code ? `?code=${encodeURIComponent(code)}` : "";
+  const codeParam = code ? `?invite=${encodeURIComponent(code)}` : "";
   window.location.href = code ? `/signup${codeParam}` : "/login";
 }
 
