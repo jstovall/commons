@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { toggleFavorite, addComment, requestLoan, flagContent } from "@/app/actions";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
+import SearchBar from "./SearchBar";
 
 const statusStampClass: Record<string, string> = {
   available: "commons-stamp commons-stamp-teal",
@@ -53,9 +54,11 @@ let query = supabase
   .eq("neighborhood_id", membership.neighborhood_id)
   .order("created_at", { ascending: false });
 
-  if (q) query = query.ilike("name", `%${q}%`);
-  if (category) query = query.eq("category_id", category);
-
+if (q) {
+  const safe = q.replace(/[,()]/g, " ").trim();
+  if (safe) query = query.or(`name.ilike.%${safe}%,description.ilike.%${safe}%`);
+}
+if (category) query = query.eq("category_id", category);
   const { data: items, error: itemsError } = await query;
   if (itemsError) console.error("Browse query error:", itemsError);
 
@@ -83,28 +86,11 @@ const { data: myLoans } = await supabase
     <div>
       <h2 className="commons-heading mb-4 text-3xl">Available to borrow</h2>
 
-      <form className="mb-6 flex flex-wrap gap-2" action="/browse">
-        <input
-          type="text"
-          name="q"
-          defaultValue={q}
-          placeholder="Search items…"
-          className="commons-input flex-1 text-sm"
-        />
-        <select
-          name="category"
-          defaultValue={category ?? ""}
-          className="commons-input text-sm"
-        >
-          <option value="">All categories</option>
-          {categories?.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <button className="commons-button text-sm">Search</button>
-      </form>
+<SearchBar
+  initialQuery={q ?? ""}
+  initialCategory={category ?? ""}
+  categories={categories ?? []}
+/>
 
 <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {items?.map((item) => {
