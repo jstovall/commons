@@ -1,14 +1,10 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import {
-  createItem,
-  updateItem,
-  deleteItem,
-  respondToLoan,
-} from "@/app/actions";
+import { respondToLoan } from "@/app/actions";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
 import ImageFileInput from "./ImageFileInput";
 import NewItemForm from "./NewItemForm";
+import EditItemForm from "./EditItemForm";
 
 export default async function MyItemsPage() {
   const supabase = await createClient();
@@ -155,55 +151,7 @@ const sortedGroups = Array.from(groupedItems.entries()).sort(([a], [b]) =>
               </span>
             </div>
 
-            <details className="mt-3">
-              <summary className="cursor-pointer font-mono text-xs font-bold">
-                edit
-              </summary>
-<form action={updateItem} className="mt-2 flex flex-col gap-2">
-  <input type="hidden" name="item_id" value={item.id} />
-  <input type="hidden" name="existing_image_url" value={item.image_url ?? ""} />
-  <input
-    name="name"
-    defaultValue={item.name}
-    className="commons-input text-sm"
-  />
-  <select
-    name="category_id"
-    defaultValue={item.category_id ?? ""}
-    className="commons-input text-sm"
-  >
-    <option value="">Choose a category</option>
-    {categories?.map((c) => (
-      <option key={c.id} value={c.id}>
-        {c.name}
-      </option>
-    ))}
-  </select>
-  <textarea
-    name="description"
-    defaultValue={item.description ?? ""}
-    className="commons-input text-sm"
-  />
-  {item.image_url && (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      src={item.image_url}
-      alt=""
-      className="h-24 w-24 rounded-md border-2 border-commons-ink object-cover"
-    />
-  )}
-<ImageFileInput name="image_file" label="Replace photo (optional)" />
-  <button className="commons-button self-start text-xs">
-    Save
-  </button>
-</form>
-              <form action={deleteItem} className="mt-2">
-                <input type="hidden" name="item_id" value={item.id} />
-                <button className="font-mono text-xs font-bold text-commons-brick underline">
-                  Delete item
-                </button>
-              </form>
-            </details>
+<EditItemForm item={item} categories={categories ?? []} />
           </div>
         ))}
       </div>
