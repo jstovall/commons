@@ -41,9 +41,9 @@ const { data, error } = await supabase.auth.signUp({
   password,
   options: {
     data: { display_name: name },
-    emailRedirectTo: `${window.location.origin}${
-      code ? `/join?invite=${encodeURIComponent(code)}` : "/login"
-    }`,
+emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
+  code ? `/join?invite=${code}` : "/login"
+)}`,
   },
 });
 
