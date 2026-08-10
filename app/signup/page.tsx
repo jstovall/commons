@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { preJoinNeighborhood } from "@/app/actions";
 
 function SignupInner() {
   const router = useRouter();
@@ -36,27 +37,35 @@ function SignupInner() {
     setLoading(true);
     setError(null);
 
-const { data, error } = await supabase.auth.signUp({
-  email,
-  password,
-  options: {
-    data: { display_name: name },
-emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(
-  code ? `/join?invite=${code}` : "/login"
-)}`,
-  },
-});
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { display_name: name },
+        emailRedirectTo: `${window.location.origin}/auth/callback?next=%2Fbrowse`,
+      },
+    });
 
-    setLoading(false);
     if (error) {
+      setLoading(false);
       setError(error.message);
       return;
     }
 
-    const joinUrl = code ? `/join?invite=${encodeURIComponent(code)}` : "/join";
+    if (data.user && code) {
+      const result = await preJoinNeighborhood(data.user.id, code);
+      if (!result.success) {
+        console.warn("preJoinNeighborhood did not complete:", result.reason);
+        // Not a hard failure — if this didn't work, the app's own
+        // membership gate will send them to /join to enter the code
+        // manually after they confirm and sign in.
+      }
+    }
+
+    setLoading(false);
 
     if (data.session) {
-      router.push(joinUrl);
+      router.push("/browse");
       router.refresh();
     } else {
       setCheckEmail(true);
@@ -72,8 +81,13 @@ emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURICompon
         <div className="commons-card-flat mt-4 p-6 text-center">
           <p className="commons-heading text-xl">Check your email</p>
           <p className="mt-2 text-sm">
-            We sent a confirmation link to <strong>{email}</strong>. Click it,
-            then come back and sign in to join your neighborhood.
+            We sent a confirmation link to <strong>{email}</strong>. Click
+            it, then come back and sign in — you&apos;ll already be a
+            member of{" "}
+            {neighborhoodName
+              ? `${neighborhoodName} Commons`
+              : "your neighborhood"}
+            .
           </p>
         </div>
       </main>

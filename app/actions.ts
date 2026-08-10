@@ -6,6 +6,7 @@ import { createClient } from "@/lib/supabase/server";
 import type { Database } from "@/types/database.types";
 import { cookies } from "next/headers";
 import { getCurrentMembership, CURRENT_NEIGHBORHOOD_COOKIE } from "@/lib/current-neighborhood";
+import { createAdminClient } from "@/lib/supabase/admin";
 
 async function requireActiveMembership() {
   const supabase = await createClient();
@@ -18,6 +19,53 @@ async function requireActiveMembership() {
   if (!current) redirect("/join");
 
   return { supabase, user, membership: current };
+}
+
+
+export async function preJoinNeighborhood(userId: string, inviteCode: string) {
+  const admin = createAdminClient();
+
+  const { data: neighborhood } = await admin
+    .from("neighborhoods")
+    .select("id")
+    .eq("invite_code", inviteCode.trim().toUpperCase())
+    .maybeSingle();
+
+  if (!neighborhood) {
+    return { success: false, reason: "invalid_code" as const };
+  }
+
+  const { data: existing } = await admin
+    .from("neighborhood_members")
+    .select("id, neighborhood_id")
+    .eq("user_id", userId);
+
+  // Idempotent: retrying signup (e.g. resending a lost confirmation email)
+  // reuses the same user id — if they already belong here, that's success,
+  // not an error.
+  if (existing?.some((m) => m.neighborhood_id === neighborhood.id)) {
+    return { success: true as const };
+  }
+
+  // Safety guard: this runs via the service role and bypasses RLS, so it's
+  // only allowed for genuinely brand-new accounts with zero memberships
+  // anywhere — never a general "join any neighborhood" backdoor.
+  if (existing && existing.length > 0) {
+    return { success: false, reason: "already_has_membership" as const };
+  }
+
+  const { error } = await admin.from("neighborhood_members").insert({
+    neighborhood_id: neighborhood.id,
+    user_id: userId,
+    status: "active",
+  });
+
+  if (error) {
+    console.error("preJoinNeighborhood insert error:", error);
+    return { success: false, reason: "insert_failed" as const };
+  }
+
+  return { success: true as const };
 }
 
 // --- Neighborhood Switch -------------------------------------------------------------
