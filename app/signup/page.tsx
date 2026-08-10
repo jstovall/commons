@@ -52,15 +52,16 @@ function SignupInner() {
       return;
     }
 
-    if (data.user && code) {
-      const result = await preJoinNeighborhood(data.user.id, code);
-      if (!result.success) {
-        console.warn("preJoinNeighborhood did not complete:", result.reason);
-        // Not a hard failure — if this didn't work, the app's own
-        // membership gate will send them to /join to enter the code
-        // manually after they confirm and sign in.
-      }
+if (data.user && code) {
+  try {
+    const result = await preJoinNeighborhood(data.user.id, code);
+    if (!result.success) {
+      console.warn("preJoinNeighborhood did not complete:", result.reason);
     }
+  } catch (err) {
+    console.error("preJoinNeighborhood call failed:", err);
+  }
+}
 
     setLoading(false);
 
