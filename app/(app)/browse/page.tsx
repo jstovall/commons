@@ -11,7 +11,6 @@ const statusStampClass: Record<string, string> = {
   unavailable: "commons-stamp",
 };
 
-
 function formatDateTime(dateString: string) {
   return new Intl.DateTimeFormat("en-US", {
     month: "short",
@@ -21,12 +20,13 @@ function formatDateTime(dateString: string) {
     minute: "2-digit",
   }).format(new Date(dateString));
 }
+
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string }>;
+  searchParams: Promise<{ q?: string; category?: string; filter?: string }>;
 }) {
-  const { q, category } = await searchParams;
+  const { q, category, filter } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -34,48 +34,73 @@ export default async function BrowsePage({
   if (!user) redirect("/login");
 
   const { current: membership } = await getCurrentMembership(user.id);
-if (!membership) redirect("/join");
+  if (!membership) redirect("/join");
 
   const { data: categories } = await supabase
     .from("categories")
     .select("id, name")
     .order("name");
 
-let query = supabase
-  .from("items")
-  .select(
-    `id, name, description, image_url, status, created_at, owner_id,
-     category:categories(name),
-     owner:profiles!items_owner_id_fkey(display_name),
-     comments(id, comment, created_at, content_flag, user_id, user:profiles(display_name))`
-  )
-  .eq("is_active", true)
-  .eq("content_flag", false)
-  .eq("neighborhood_id", membership.neighborhood_id)
-  .order("created_at", { ascending: false });
+  // Favorites are needed up front — both for the heart icons and to build
+  // the "My Favorites" filter condition below.
+ const { data: favorites } = await supabase
+  .from("favorites")
+  .select("item_id")
+  .eq("user_id", user.id);
+const favoriteIds = new Set(
+  ((favorites ?? []) as { item_id: string }[]).map((f) => f.item_id)
+);
 
-if (q) {
-  const safe = q.replace(/[,()]/g, " ").trim();
-  if (safe) query = query.or(`name.ilike.%${safe}%,description.ilike.%${safe}%`);
+const selectedFilter = filter ?? "available";
+
+let items: any[] | null = [];
+let itemsError: any = null;
+
+if (selectedFilter === "favorites" && favoriteIds.size === 0) {
+  // Nothing to query — avoid an .in() with an empty list.
+  items = [];
+} else {
+  let query = supabase
+    .from("items")
+    .select(
+      `id, name, description, image_url, status, created_at, owner_id,
+       category:categories(name),
+       owner:profiles!items_owner_id_fkey(display_name),
+       comments(id, comment, created_at, content_flag, user_id, user:profiles(display_name))`
+    )
+    .eq("is_active", true)
+    .eq("content_flag", false)
+    .eq("neighborhood_id", membership.neighborhood_id)
+    .order("created_at", { ascending: false });
+
+  if (q) {
+    const safe = q.replace(/[,()]/g, " ").trim();
+    if (safe) query = query.or(`name.ilike.%${safe}%,description.ilike.%${safe}%`);
+  }
+  if (category) query = query.eq("category_id", category);
+
+  if (selectedFilter === "available") {
+    query = query.eq("status", "available").neq("owner_id", user.id);
+  } else if (selectedFilter === "checked_out") {
+    query = query.in("status", ["checked_out", "requested"]).neq("owner_id", user.id);
+  } else if (selectedFilter === "my_items") {
+    query = query.eq("owner_id", user.id);
+  } else if (selectedFilter === "favorites") {
+    query = query.in("id", Array.from(favoriteIds));
+  }
+
+  const result = await query;
+  items = result.data;
+  itemsError = result.error;
 }
-if (category) query = query.eq("category_id", category);
-  const { data: items, error: itemsError } = await query;
+
   if (itemsError) console.error("Browse query error:", itemsError);
 
-  const { data: favorites } = await supabase
-    .from("favorites")
-    .select("item_id")
-    .eq("user_id", user.id);
-  const favoriteIds = new Set(
-    ((favorites ?? []) as { item_id: string }[]).map((f) => f.item_id)
-  );
-
-  
-const { data: myLoans } = await supabase
-  .from("loans")
-  .select("id, item_id, status")
-  .eq("borrower_id", user.id)
-  .in("status", ["requested", "approved", "checked_out"]);
+  const { data: myLoans } = await supabase
+    .from("loans")
+    .select("id, item_id, status")
+    .eq("borrower_id", user.id)
+    .in("status", ["requested", "approved", "checked_out"]);
   const myLoanMap = new Map(
     ((myLoans ?? []) as { id: string; item_id: string; status: string }[]).map(
       (l) => [l.item_id, { id: l.id, status: l.status }]
@@ -89,10 +114,11 @@ const { data: myLoans } = await supabase
 <SearchBar
   initialQuery={q ?? ""}
   initialCategory={category ?? ""}
+  initialFilter={selectedFilter}
   categories={categories ?? []}
 />
 
-<div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
+      <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {items?.map((item) => {
           const isOwner = item.owner_id === user.id;
           const isFavorited = favoriteIds.has(item.id);
@@ -140,26 +166,28 @@ const { data: myLoans } = await supabase
                   {item.status.replace("_", " ")}
                 </span>
               </div>
-{!isOwner && (
-  <details className="mt-2">
-    <summary className="cursor-pointer font-mono text-[10px] text-commons-ink/50">
-      🚩 report this item
-    </summary>
-    <form action={flagContent} className="mt-1 flex gap-2">
-      <input type="hidden" name="target_type" value="item" />
-      <input type="hidden" name="target_id" value={item.id} />
-      <input
-        name="reason"
-        required
-        placeholder="Why report this item?"
-        className="commons-input flex-1 text-xs"
-      />
-      <button className="commons-button commons-button-secondary text-xs">
-        Submit
-      </button>
-    </form>
-  </details>
-)}
+
+              {!isOwner && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer font-mono text-[10px] text-commons-ink/50">
+                    🚩 report this item
+                  </summary>
+                  <form action={flagContent} className="mt-1 flex gap-2">
+                    <input type="hidden" name="target_type" value="item" />
+                    <input type="hidden" name="target_id" value={item.id} />
+                    <input
+                      name="reason"
+                      required
+                      placeholder="Why report this item?"
+                      className="commons-input flex-1 text-xs"
+                    />
+                    <button className="commons-button commons-button-secondary text-xs">
+                      Submit
+                    </button>
+                  </form>
+                </details>
+              )}
+
               {!isOwner && item.status === "available" && !myLoan && (
                 <form action={requestLoan} className="mt-4 flex gap-2">
                   <input type="hidden" name="item_id" value={item.id} />
@@ -189,45 +217,45 @@ const { data: myLoans } = await supabase
 
               <details className="mt-4">
                 <summary className="cursor-pointer font-mono text-xs font-bold">
-                  {item.comments?.length ?? 0} comment
+                  {item.comments?.filter((c: any) => !c.content_flag).length ?? 0} comment
                   {item.comments?.length === 1 ? "" : "s"}
                 </summary>
                 <div className="mt-2 flex flex-col gap-2 border-t-2 border-dashed border-commons-ink/40 pt-2">
-{item.comments
-  ?.filter((c) => !c.content_flag)
-  .map((c) => (
-    <div key={c.id}>
-      <p className="text-sm">
-        <span className="font-mono text-xs font-bold">
-          {c.user?.display_name}:
-        </span>{" "}
-        {c.comment}{" "}
-        <span className="font-mono text-[10px] text-commons-ink/50">
-          · {formatDateTime(c.created_at)}
-        </span>
-      </p>
-      {c.user_id !== user.id && (
-        <details className="mt-0.5">
-          <summary className="cursor-pointer font-mono text-[10px] text-commons-ink/50">
-            🚩 report
-          </summary>
-          <form action={flagContent} className="mt-1 flex gap-2">
-            <input type="hidden" name="target_type" value="comment" />
-            <input type="hidden" name="target_id" value={c.id} />
-            <input
-              name="reason"
-              required
-              placeholder="Why report this comment?"
-              className="commons-input flex-1 text-xs"
-            />
-            <button className="commons-button commons-button-secondary text-xs">
-              Submit
-            </button>
-          </form>
-        </details>
-      )}
-    </div>
-  ))}
+                  {item.comments
+                    ?.filter((c: any) => !c.content_flag)
+                    .map((c: any) => (
+                      <div key={c.id}>
+                        <p className="text-sm">
+                          <span className="font-mono text-xs font-bold">
+                            {c.user?.display_name}:
+                          </span>{" "}
+                          {c.comment}{" "}
+                          <span className="font-mono text-[10px] text-commons-ink/50">
+                            · {formatDateTime(c.created_at)}
+                          </span>
+                        </p>
+                        {c.user_id !== user.id && (
+                          <details className="mt-0.5">
+                            <summary className="cursor-pointer font-mono text-[10px] text-commons-ink/50">
+                              🚩 report
+                            </summary>
+                            <form action={flagContent} className="mt-1 flex gap-2">
+                              <input type="hidden" name="target_type" value="comment" />
+                              <input type="hidden" name="target_id" value={c.id} />
+                              <input
+                                name="reason"
+                                required
+                                placeholder="Why report this comment?"
+                                className="commons-input flex-1 text-xs"
+                              />
+                              <button className="commons-button commons-button-secondary text-xs">
+                                Submit
+                              </button>
+                            </form>
+                          </details>
+                        )}
+                      </div>
+                    ))}
                   <form action={addComment} className="mt-1 flex gap-2">
                     <input type="hidden" name="item_id" value={item.id} />
                     <input
@@ -246,9 +274,9 @@ const { data: myLoans } = await supabase
           );
         })}
 
-        {items?.length === 0 && (
-          <p className="font-mono text-sm">No items match your search yet.</p>
-        )}
+{items?.length === 0 && (
+  <p className="font-mono text-sm">No items match your search yet.</p>
+)}
       </div>
     </div>
   );
