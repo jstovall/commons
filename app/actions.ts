@@ -21,6 +21,35 @@ async function requireActiveMembership() {
   return { supabase, user, membership: current };
 }
 
+export async function submitFeedback(formData: FormData) {
+  const { supabase, user, membership } = await requireActiveMembership();
+
+  const topic = formData.get("topic") as string;
+  const message = (formData.get("message") as string)?.trim();
+  if (!message) return;
+
+  const { error } = await supabase.from("feedback").insert({
+    user_id: user.id,
+    neighborhood_id: membership.neighborhood_id,
+    topic,
+    message,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/feedback", "page");
+}
+
+export async function markFeedbackReviewed(formData: FormData) {
+  const { supabase } = await requireAdminMembership();
+  const feedbackId = formData.get("feedback_id") as string;
+
+  const { error } = await supabase
+    .from("feedback")
+    .update({ status: "reviewed" })
+    .eq("id", feedbackId);
+  if (error) throw new Error(error.message);
+  revalidatePath("/admin/feedback", "page");
+}
+
 
 export async function preJoinNeighborhood(userId: string, inviteCode: string) {
   try {

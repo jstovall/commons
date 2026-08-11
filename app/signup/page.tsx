@@ -82,13 +82,8 @@ if (data.user && code) {
         <div className="commons-card-flat mt-4 p-6 text-center">
           <p className="commons-heading text-xl">Check your email</p>
           <p className="mt-2 text-sm">
-            We sent a confirmation link to <strong>{email}</strong>. Click
-            it, then come back and sign in — you&apos;ll already be a
-            member of{" "}
-            {neighborhoodName
-              ? `${neighborhoodName} Commons`
-              : "your neighborhood"}
-            .
+            We sent a confirmation link to <strong>{email}</strong> -- email is from Supabase Auth. Click
+            on the link to verify your email and to access the log-in page.
           </p>
         </div>
       </main>

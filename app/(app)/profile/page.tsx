@@ -96,6 +96,13 @@ const { memberships, current } = await getCurrentMembership(user.id);
     </div>
   </div>
 )}
+<a
+  href="/feedback"
+  className="commons-button commons-button-secondary self-start text-sm"
+>
+  Send feedback
+</a>
+
 
       <form action={signOutAction}>
         <button className="commons-button commons-button-secondary self-start text-sm">
