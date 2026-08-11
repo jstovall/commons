@@ -116,7 +116,7 @@ body {
   /* Input fields — simple, tactile, not corporate-clean */
   .commons-input {
     font-family: var(--font-body);
-    background-color: theme("colors.commons.cream");
+    background-color: theme("colors.commons.card");
     border: 2px solid theme("colors.commons.ink");
     border-radius: 6px;
     padding: 0.5rem 0.75rem;

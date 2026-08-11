@@ -3,6 +3,8 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import BottomNav from "./BottomNav";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
+import StandaloneTracker from "./StandaloneTracker";
+import AddToHomeScreenBanner from "./AddToHomeScreenBanner";
 
 export default async function AppLayout({
   children,
@@ -30,6 +32,8 @@ const neighborhoodName = current.neighborhood?.name;
 
   return (
     <div className="min-h-screen pb-24">
+        <StandaloneTracker />
+  <AddToHomeScreenBanner />
       <header className="flex items-center justify-between border-b-2 border-commons-ink bg-commons-teal px-5 py-3">
         <span className="commons-heading text-3xl leading-none text-commons-cream">
           {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}

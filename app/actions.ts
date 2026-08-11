@@ -76,6 +76,19 @@ export async function respondToFeedback(formData: FormData) {
 }
 
 
+export async function recordStandaloneVisit() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase
+    .from("profiles")
+    .update({ last_standalone_at: new Date().toISOString() })
+    .eq("id", user.id);
+}
+
 export async function preJoinNeighborhood(userId: string, inviteCode: string) {
   try {
     const admin = createAdminClient();
