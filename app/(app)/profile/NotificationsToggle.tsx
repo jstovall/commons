@@ -1,0 +1,115 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { urlBase64ToUint8Array } from "@/lib/push";
+import { savePushSubscription, deletePushSubscription } from "@/app/actions";
+
+export default function NotificationsToggle() {
+  const [supported, setSupported] = useState(false);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+  const [permission, setPermission] = useState<NotificationPermission | null>(null);
+  const [subscribed, setSubscribed] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const ua = window.navigator.userAgent;
+    setIsIOS(/iPad|iPhone|iPod/.test(ua) && !("MSStream" in window));
+    setIsStandalone(
+      window.matchMedia("(display-mode: standalone)").matches ||
+        (window.navigator as unknown as { standalone?: boolean }).standalone === true
+    );
+    setSupported("serviceWorker" in navigator && "PushManager" in window);
+    if ("Notification" in window) setPermission(Notification.permission);
+
+    navigator.serviceWorker?.ready.then(async (reg) => {
+      const sub = await reg.pushManager.getSubscription();
+      setSubscribed(Boolean(sub));
+    });
+  }, []);
+
+ async function handleEnable() {
+  setLoading(true);
+  try {
+    const permissionResult = await Notification.requestPermission();
+    setPermission(permissionResult);
+    if (permissionResult !== "granted") {
+      setLoading(false);
+      return;
+    }
+
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(
+        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+      ) as BufferSource,
+    });
+
+    await savePushSubscription(
+      sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } }
+    );
+    setSubscribed(true);
+  } catch (err) {
+    console.error("Push subscribe failed:", err);
+  }
+  setLoading(false);
+}
+
+  async function handleDisable() {
+    setLoading(true);
+    try {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await deletePushSubscription(sub.endpoint);
+        await sub.unsubscribe();
+      }
+      setSubscribed(false);
+    } catch (err) {
+      console.error("Push unsubscribe failed:", err);
+    }
+    setLoading(false);
+  }
+
+  if (!supported) return null;
+
+  if (isIOS && !isStandalone) {
+    return (
+      <div className="commons-card-flat p-4">
+        <p className="text-sm">
+          Notifications require adding Commons to your home screen first —
+          tap the Share icon in Safari, then &ldquo;Add to Home Screen.&rdquo;
+        </p>
+      </div>
+    );
+  }
+
+  if (permission === "denied") {
+    return (
+      <div className="commons-card-flat p-4">
+        <p className="text-sm">
+          Notifications are blocked in your browser settings. You&apos;ll
+          need to re-enable them for this site manually to receive updates.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="commons-card-flat flex items-center justify-between p-4">
+      <p className="text-sm">
+        {subscribed
+          ? "You'll get notified about new requests, messages, and replies."
+          : "Get notified about new requests, messages, and replies."}
+      </p>
+      <button
+        onClick={subscribed ? handleDisable : handleEnable}
+        disabled={loading}
+        className="commons-button commons-button-secondary shrink-0 text-xs disabled:opacity-50"
+      >
+        {loading ? "…" : subscribed ? "Disable" : "Enable"}
+      </button>
+    </div>
+  );
+}

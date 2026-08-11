@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
 import { updateProfile, signOutAction, switchNeighborhood } from "@/app/actions";
+import NotificationsToggle from "./NotificationsToggle";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -96,6 +97,7 @@ const { memberships, current } = await getCurrentMembership(user.id);
     </div>
   </div>
 )}
+<NotificationsToggle />
 <a
   href="/feedback"
   className="commons-button commons-button-secondary self-start text-sm"
