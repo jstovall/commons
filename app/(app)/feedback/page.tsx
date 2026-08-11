@@ -30,11 +30,11 @@ export default async function FeedbackPage() {
   const { current: membership } = await getCurrentMembership(user.id);
   if (!membership) redirect("/join");
 
-  const { data: myFeedback, error } = await supabase
-    .from("feedback")
-    .select("id, topic, message, status, created_at")
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+const { data: myFeedback, error } = await supabase
+  .from("feedback")
+  .select("id, topic, message, status, created_at, admin_response, responded_at")
+  .eq("user_id", user.id)
+  .order("created_at", { ascending: false });
   if (error) console.error("Feedback query error:", error);
 
   return (
@@ -92,6 +92,14 @@ export default async function FeedbackPage() {
                 <p className="mt-1 font-mono text-[10px] text-commons-ink/50">
                   {formatDateTime(f.created_at)}
                 </p>
+                {f.admin_response && (
+  <div className="mt-3 border-t-2 border-dashed border-commons-ink/40 pt-2">
+    <p className="font-mono text-[10px] font-bold uppercase text-commons-teal">
+      Admin reply
+    </p>
+    <p className="mt-1 text-sm">{f.admin_response}</p>
+  </div>
+)}
               </div>
             ))}
           </div>

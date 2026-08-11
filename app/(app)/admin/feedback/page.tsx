@@ -1,7 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
-import { markFeedbackReviewed } from "@/app/actions";
+import { respondToFeedback } from "@/app/actions";
 
 const TOPIC_LABELS: Record<string, string> = {
   asks: "Asks",
@@ -30,12 +30,14 @@ export default async function AdminFeedbackPage() {
   const { current: myMembership } = await getCurrentMembership(user.id);
   if (!myMembership) redirect("/browse");
 
-  const { data: feedback, error } = await supabase
-    .from("feedback")
-    .select("id, topic, message, status, created_at, submitter:profiles(display_name)")
-    .eq("neighborhood_id", myMembership.neighborhood_id)
-    .order("status", { ascending: true })
-    .order("created_at", { ascending: false });
+const { data: feedback, error } = await supabase
+  .from("feedback")
+  .select(
+    "id, topic, message, status, created_at, admin_response, responded_at, submitter:profiles!feedback_user_id_fkey(display_name)"
+  )
+  .eq("neighborhood_id", myMembership.neighborhood_id)
+  .order("status", { ascending: true })
+  .order("created_at", { ascending: false });
   if (error) console.error("Admin feedback query error:", error);
 
   return (
@@ -61,14 +63,19 @@ export default async function AdminFeedbackPage() {
             <p className="mt-2 font-mono text-xs text-commons-ink/70">
               from {f.submitter?.display_name} · {formatDateTime(f.created_at)}
             </p>
-            {f.status === "open" && (
-              <form action={markFeedbackReviewed} className="mt-3">
-                <input type="hidden" name="feedback_id" value={f.id} />
-                <button className="commons-button commons-button-secondary text-xs">
-                  Mark reviewed
-                </button>
-              </form>
-            )}
+<form action={respondToFeedback} className="mt-3 flex flex-col gap-2">
+  <input type="hidden" name="feedback_id" value={f.id} />
+  <textarea
+    name="response"
+    defaultValue={f.admin_response ?? ""}
+    rows={2}
+    placeholder="Optional reply to the person who sent this…"
+    className="commons-input text-sm"
+  />
+  <button className="commons-button self-start text-xs">
+    {f.status === "reviewed" ? "Update reply" : "Reply & mark reviewed"}
+  </button>
+</form>
           </div>
         ))}
 

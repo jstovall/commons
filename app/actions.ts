@@ -38,16 +38,41 @@ export async function submitFeedback(formData: FormData) {
   revalidatePath("/feedback", "page");
 }
 
-export async function markFeedbackReviewed(formData: FormData) {
-  const { supabase } = await requireAdminMembership();
+export async function respondToFeedback(formData: FormData) {
+  const { supabase, user, membership } = await requireAdminMembership();
   const feedbackId = formData.get("feedback_id") as string;
+  const response = (formData.get("response") as string)?.trim();
+
+  const { data: original } = await supabase
+    .from("feedback")
+    .select("user_id, topic")
+    .eq("id", feedbackId)
+    .maybeSingle();
 
   const { error } = await supabase
     .from("feedback")
-    .update({ status: "reviewed" })
+    .update({
+      status: "reviewed",
+      admin_response: response || null,
+      responded_by: user.id,
+      responded_at: new Date().toISOString(),
+    })
     .eq("id", feedbackId);
   if (error) throw new Error(error.message);
+
+  if (original && response) {
+    await supabase.from("notifications").insert({
+      user_id: original.user_id,
+      neighborhood_id: membership.neighborhood_id,
+      type: "feedback_response",
+      title: "Reply to your feedback",
+      body: response.length > 100 ? `${response.slice(0, 100)}…` : response,
+      link_url: "/feedback",
+    });
+  }
+
   revalidatePath("/admin/feedback", "page");
+  revalidatePath("/feedback", "page");
 }
 
 
