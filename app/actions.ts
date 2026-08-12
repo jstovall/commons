@@ -104,7 +104,7 @@ export async function deletePushSubscription(endpoint: string) {
     .eq("user_id", user.id);
 }
 
-export async function recordStandaloneVisit() {
+export async function recordStandaloneVisit(platform: "ios" | "android" | "other") {
   const supabase = await createClient();
   const {
     data: { user },
@@ -113,8 +113,48 @@ export async function recordStandaloneVisit() {
 
   await supabase
     .from("profiles")
-    .update({ last_standalone_at: new Date().toISOString() })
+    .update({ last_standalone_at: new Date().toISOString(), platform })
     .eq("id", user.id);
+}
+
+export async function startAdminMemberThread(formData: FormData) {
+  const { supabase, user, membership } = await requireAdminMembership();
+  const memberUserId = formData.get("user_id") as string;
+
+  const { data: existing } = await supabase
+    .from("moderation_threads")
+    .select("id")
+    .eq("content_owner_id", memberUserId)
+    .eq("initiated_by", user.id)
+    .is("report_id", null)
+    .maybeSingle();
+
+  let threadId = existing?.id;
+
+  if (!threadId) {
+    const { data: newThread, error } = await supabase
+      .from("moderation_threads")
+      .insert({
+        neighborhood_id: membership.neighborhood_id,
+        content_owner_id: memberUserId,
+        initiated_by: user.id,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    threadId = newThread.id;
+
+    await supabase.from("notifications").insert({
+      user_id: memberUserId,
+      neighborhood_id: membership.neighborhood_id,
+      type: "admin_message",
+      title: "Message from an admin",
+      body: "An admin started a conversation with you.",
+      link_url: `/moderation/${threadId}`,
+    });
+  }
+
+  redirect(`/moderation/${threadId}`);
 }
 
 export async function preJoinNeighborhood(userId: string, inviteCode: string) {

@@ -24,11 +24,11 @@ export default async function ModerationThreadPage({
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: thread, error: threadError } = await supabase
-    .from("moderation_threads")
-    .select("id, content_owner_id, neighborhood_id")
-    .eq("id", id)
-    .maybeSingle();
+const { data: thread, error: threadError } = await supabase
+  .from("moderation_threads")
+  .select("id, content_owner_id, neighborhood_id, report_id")
+  .eq("id", id)
+  .maybeSingle();
   if (threadError) console.error("Moderation thread query error:", threadError);
   if (!thread) notFound();
 
@@ -47,9 +47,13 @@ export default async function ModerationThreadPage({
         ← back
       </a>
 
-      <h2 className="commons-heading mb-1 mt-3 text-3xl">
-        {isOwner ? "About your removed content" : "Moderation conversation"}
-      </h2>
+<h2 className="commons-heading mb-1 mt-3 text-3xl">
+  {thread.report_id
+    ? isOwner
+      ? "About your removed content"
+      : "Moderation conversation"
+    : "Direct message"}
+</h2>
 
       <div className="mt-4 flex flex-col gap-3">
         {messages?.map((m) => {
