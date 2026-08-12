@@ -40,17 +40,7 @@ for (const r of reports ?? []) {
       authorName: data?.owner?.display_name ?? "unknown",
       contextUrl: "/browse",
     };
-  } else if (r.target_type === "comment") {
-    const { data } = await supabase
-      .from("comments")
-      .select("comment, user:profiles(display_name)")
-      .eq("id", r.target_id)
-      .maybeSingle();
-    details[r.id] = {
-      text: data?.comment ?? "(comment not found)",
-      authorName: data?.user?.display_name ?? "unknown",
-      contextUrl: "/browse",
-    };
+  
   } else if (r.target_type === "loan_message") {
     const { data } = await supabase
       .from("loan_messages")
