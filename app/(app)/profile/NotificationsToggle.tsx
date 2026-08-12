@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { urlBase64ToUint8Array } from "@/lib/push";
+import { subscribeToPush, unsubscribeFromPush } from "@/lib/push";
 import { savePushSubscription, deletePushSubscription } from "@/app/actions";
 
 export default function NotificationsToggle() {
@@ -28,49 +28,35 @@ export default function NotificationsToggle() {
     });
   }, []);
 
- async function handleEnable() {
+async function handleEnable() {
   setLoading(true);
   try {
-    const permissionResult = await Notification.requestPermission();
-    setPermission(permissionResult);
-    if (permissionResult !== "granted") {
-      setLoading(false);
-      return;
-    }
-
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.subscribe({
-      userVisibleOnly: true,
-      applicationServerKey: urlBase64ToUint8Array(
-        process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
-      ) as BufferSource,
-    });
-
+    const sub = await subscribeToPush();
     await savePushSubscription(
       sub.toJSON() as { endpoint: string; keys: { p256dh: string; auth: string } }
     );
     setSubscribed(true);
+    setPermission("granted");
   } catch (err) {
     console.error("Push subscribe failed:", err);
+    if ("Notification" in window) setPermission(Notification.permission);
   }
   setLoading(false);
 }
 
-  async function handleDisable() {
-    setLoading(true);
-    try {
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await reg.pushManager.getSubscription();
-      if (sub) {
-        await deletePushSubscription(sub.endpoint);
-        await sub.unsubscribe();
-      }
-      setSubscribed(false);
-    } catch (err) {
-      console.error("Push unsubscribe failed:", err);
-    }
-    setLoading(false);
+async function handleDisable() {
+  setLoading(true);
+  try {
+    const reg = await navigator.serviceWorker.ready;
+    const sub = await reg.pushManager.getSubscription();
+    if (sub) await deletePushSubscription(sub.endpoint);
+    await unsubscribeFromPush();
+    setSubscribed(false);
+  } catch (err) {
+    console.error("Push unsubscribe failed:", err);
   }
+  setLoading(false);
+}
 
   if (!supported) return null;
 

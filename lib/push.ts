@@ -8,3 +8,26 @@ export function urlBase64ToUint8Array(base64String: string): Uint8Array {
   }
   return outputArray;
 }
+
+export async function subscribeToPush(): Promise<PushSubscription> {
+  const permission = await Notification.requestPermission();
+  if (permission !== "granted") {
+    throw new Error(`Permission ${permission}`);
+  }
+
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(
+      process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY!
+    ) as BufferSource,
+  });
+
+  return sub;
+}
+
+export async function unsubscribeFromPush(): Promise<void> {
+  const reg = await navigator.serviceWorker.ready;
+  const sub = await reg.pushManager.getSubscription();
+  if (sub) await sub.unsubscribe();
+}

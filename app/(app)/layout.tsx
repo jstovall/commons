@@ -5,6 +5,7 @@ import BottomNav from "./BottomNav";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
 import StandaloneTracker from "./StandaloneTracker";
 import AddToHomeScreenBanner from "./AddToHomeScreenBanner";
+import NotificationsPromptBanner from "./NotificationsPromptBanner";
 
 export default async function AppLayout({
   children,
@@ -46,8 +47,8 @@ const neighborhoodName = current.neighborhood?.name;
             </span>
           )}
         </Link>
+        <NotificationsPromptBanner />
       </header>
-
 <main className="mx-auto w-full max-w-5xl px-4 py-6">{children}</main>
 
 <BottomNav isAdmin={isAdmin} />
