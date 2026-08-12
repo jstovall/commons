@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
+import { getCurrentMembership } from "@/lib/current-neighborhood";
 import {
   removeMember,
   updateMemberRole,
@@ -13,6 +14,15 @@ const PLATFORM_ICON: Record<string, string> = {
   other: "💻 Web",
 };
 
+function formatDate(dateString: string | null) {
+  if (!dateString) return "never";
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "2-digit",
+    year: "numeric",
+  }).format(new Date(dateString));
+}
+
 export default async function AdminMembersPage() {
   const supabase = await createClient();
   const {
@@ -20,14 +30,15 @@ export default async function AdminMembersPage() {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { data: myMembership } = await supabase
-    .from("neighborhood_members")
-    .select("neighborhood_id, role, neighborhood:neighborhoods(name, invite_code)")
-    .eq("user_id", user.id)
-    .eq("status", "active")
-    .maybeSingle();
+  const { current: myMembership } = await getCurrentMembership(user.id);
   if (!myMembership) redirect("/browse");
   if (myMembership.role !== "admin") redirect("/admin/reports");
+
+  const { data: neighborhoodDetails } = await supabase
+    .from("neighborhoods")
+    .select("name, invite_code")
+    .eq("id", myMembership.neighborhood_id)
+    .maybeSingle();
 
   const { data: members, error } = await supabase
     .from("neighborhood_members")
@@ -46,16 +57,35 @@ export default async function AdminMembersPage() {
     .in("user_id", (members ?? []).map((m) => m.user_id));
   const subscribedIds = new Set((subs ?? []).map((s) => s.user_id));
 
+  const { data: neighborhoodItems } = await supabase
+    .from("items")
+    .select("owner_id")
+    .eq("neighborhood_id", myMembership.neighborhood_id)
+    .eq("is_active", true);
+  const itemCountMap = new Map<string, number>();
+  for (const item of neighborhoodItems ?? []) {
+    itemCountMap.set(item.owner_id, (itemCountMap.get(item.owner_id) ?? 0) + 1);
+  }
+
+  const { data: lastLogins, error: loginsError } = await supabase.rpc(
+    "get_last_sign_ins",
+    { _neighborhood_id: myMembership.neighborhood_id }
+  );
+  if (loginsError) console.error("Last logins query error:", loginsError);
+  const lastLoginMap = new Map(
+    (lastLogins ?? []).map((l) => [l.user_id, l.last_sign_in_at])
+  );
+
   return (
     <div>
       <h2 className="commons-heading mb-1 text-3xl">
-        {myMembership.neighborhood?.name} Commons
+        {neighborhoodDetails?.name} Commons
       </h2>
 
       <div className="commons-card-flat mt-4 p-4">
         <p className="font-mono text-xs font-bold uppercase">Invite code</p>
         <p className="commons-heading text-2xl">
-          {myMembership.neighborhood?.invite_code}
+          {neighborhoodDetails?.invite_code}
         </p>
         <form action={regenerateInviteCode} className="mt-2">
           <button className="commons-button commons-button-secondary text-xs">
@@ -75,29 +105,31 @@ export default async function AdminMembersPage() {
         {members?.map((m) => {
           const installed = Boolean(m.profile?.last_standalone_at);
           const notifOn = subscribedIds.has(m.user_id);
+          const itemCount = itemCountMap.get(m.user_id) ?? 0;
+          const lastLogin = lastLoginMap.get(m.user_id) ?? null;
 
           return (
             <div key={m.user_id} className="commons-card-flat p-3">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-sm font-bold">{m.profile?.display_name}</p>
-                  <div className="mt-1 flex flex-wrap items-center gap-2">
-                    <span className="commons-stamp commons-stamp-olive">
-                      {m.role}
-                    </span>
-                    {installed && (
-                      <span className="font-mono text-[10px] text-commons-ink/60">
-                        {PLATFORM_ICON[m.profile?.platform ?? "other"]}
-                      </span>
-                    )}
-                    <span
-                      className="font-mono text-[10px] text-commons-ink/60"
-                      title={notifOn ? "Notifications enabled" : "Notifications off"}
-                    >
-                      {notifOn ? "🔔" : "🔕"}
-                    </span>
-                  </div>
-                </div>
+              <p className="text-sm font-bold">{m.profile?.display_name}</p>
+              <span className="commons-stamp commons-stamp-olive mt-1 inline-block">
+                {m.role}
+              </span>
+
+              <div className="mt-2 flex flex-wrap items-center gap-3 font-mono text-[10px] text-commons-ink/60">
+                <span title={notifOn ? "Notifications enabled" : "Notifications off"}>
+                  {notifOn ? "🔔" : "🔕"}
+                </span>
+                <span title="Active items shared">
+                  🏷️ {itemCount}
+                </span>
+                <span title="Last login">
+                  🕓 {formatDate(lastLogin)}
+                </span>
+                {installed && (
+                  <span title="Installed platform">
+                    {PLATFORM_ICON[m.profile?.platform ?? "other"]}
+                  </span>
+                )}
               </div>
 
               {m.user_id !== user.id && (
