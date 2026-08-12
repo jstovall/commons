@@ -73,6 +73,9 @@ if (!membership) redirect("/join");
     return new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
   });
 
+const openAsks = sortedAsks.filter((a) => a.status === "open");
+const closedAsks = sortedAsks.filter((a) => a.status !== "open");
+
   return (
     <div>
       <h2 className="commons-heading mb-1 text-3xl">Asks</h2>
@@ -112,7 +115,7 @@ if (!membership) redirect("/join");
       </details>
 
 <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-  {sortedAsks.map((ask) => {
+  {openAsks.map((ask) => {
           const isMine = ask.requester_id === user.id;
           return (
             <div key={ask.id} className="commons-card p-4">
@@ -276,11 +279,41 @@ if (!membership) redirect("/join");
             </div>
           );
         })}
+</div>
 
-        {sortedAsks.length === 0 && (
-          <p className="font-mono text-sm">No asks yet — be the first!</p>
-        )}
-      </div>
+{openAsks.length === 0 && closedAsks.length === 0 && (
+  <p className="font-mono text-sm">No asks yet — be the first!</p>
+)}
+{openAsks.length === 0 && closedAsks.length > 0 && (
+  <p className="font-mono text-sm">No open asks right now.</p>
+)}
+
+{closedAsks.length > 0 && (
+  <details className="mt-8">
+    <summary className="cursor-pointer font-mono text-sm font-bold uppercase">
+      {closedAsks.length} closed ask{closedAsks.length === 1 ? "" : "s"}
+    </summary>
+    <div className="mt-3 flex flex-col gap-2">
+      {closedAsks.map((ask) => (
+        <div
+          key={ask.id}
+          className="commons-card-flat flex items-center justify-between gap-3 p-3"
+        >
+          <div>
+            <p className="text-sm font-bold">{ask.title}</p>
+            <p className="font-mono text-[10px] text-commons-ink/60">
+              asked by {ask.requester?.display_name} ·{" "}
+              {formatAskDate(ask.created_at)}
+            </p>
+          </div>
+          <span className={statusStampClass[ask.status] ?? "commons-stamp"}>
+            {ask.status}
+          </span>
+        </div>
+      ))}
+    </div>
+  </details>
+)}
     </div>
   );
 }
