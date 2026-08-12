@@ -86,6 +86,9 @@ body {
     background-color: theme("colors.commons.brick");
     color: theme("colors.commons.cream");
   }
+  .commons-button-salmon {
+  background-color: theme("colors.commons.salmon");
+}
 
   /* Rubber-stamp status/category label */
   .commons-stamp {

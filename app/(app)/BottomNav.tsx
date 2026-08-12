@@ -25,10 +25,10 @@ export default function BottomNav({ isAdmin }: { isAdmin?: boolean }) {
             key={item.href}
             href={item.href}
             className={
-              isActive
-                ? "rounded-md bg-commons-salmon px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-wide text-commons-ink shadow-[2px_2px_0_#332B22]"
-                : "rounded-md bg-commons-cream px-3 py-1.5 font-mono text-xs font-bold uppercase tracking-wide text-commons-ink"
-            }
+  isActive
+    ? "commons-button commons-button-salmon text-xs uppercase tracking-wide"
+    : "commons-button commons-button-secondary text-xs uppercase tracking-wide"
+}
           >
             {item.label}
           </Link>
