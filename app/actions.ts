@@ -301,23 +301,6 @@ export async function toggleFavorite(formData: FormData) {
   revalidatePath("/browse", "page");
 }
 
-// --- Comments -----------------------------------------------------------
-
-export async function addComment(formData: FormData) {
-  const { supabase, user, membership } = await requireActiveMembership();
-  const itemId = formData.get("item_id") as string;
-  const comment = (formData.get("comment") as string)?.trim();
-  if (!comment) return;
-
-  const { error } = await supabase.from("comments").insert({
-    item_id: itemId,
-    user_id: user.id,
-    neighborhood_id: membership.neighborhood_id,
-    comment,
-  });
-  if (error) throw new Error(error.message);
-  revalidatePath("/browse", "page");
-}
 
 // --- Loans -----------------------------------------------------------------
 
@@ -431,7 +414,6 @@ export async function flagContent(formData: FormData) {
   const { supabase, user } = await requireActiveMembership();
   const targetType = formData.get("target_type") as
     | "item"
-    | "comment"
     | "loan_message"
     | "item_request"
     | "item_request_response";
@@ -444,13 +426,6 @@ export async function flagContent(formData: FormData) {
   if (targetType === "item") {
     const { data } = await supabase
       .from("items")
-      .select("neighborhood_id")
-      .eq("id", targetId)
-      .maybeSingle();
-    neighborhoodId = data?.neighborhood_id ?? null;
-  } else if (targetType === "comment") {
-    const { data } = await supabase
-      .from("comments")
       .select("neighborhood_id")
       .eq("id", targetId)
       .maybeSingle();
@@ -530,14 +505,6 @@ export async function resolveReport(formData: FormData) {
         .maybeSingle();
       contentOwnerId = data?.owner_id ?? null;
       await supabase.from("items").update({ content_flag: true }).eq("id", targetId);
-    } else if (targetType === "comment") {
-      const { data } = await supabase
-        .from("comments")
-        .select("user_id")
-        .eq("id", targetId)
-        .maybeSingle();
-      contentOwnerId = data?.user_id ?? null;
-      await supabase.from("comments").update({ content_flag: true }).eq("id", targetId);
     }
     
     else if (targetType === "loan_message") {
