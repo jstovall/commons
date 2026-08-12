@@ -111,8 +111,8 @@ if (!membership) redirect("/join");
         </form>
       </details>
 
-      <div className="flex flex-col gap-6">
-        {sortedAsks.map((ask) => {
+<div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+  {sortedAsks.map((ask) => {
           const isMine = ask.requester_id === user.id;
           return (
             <div key={ask.id} className="commons-card p-4">
