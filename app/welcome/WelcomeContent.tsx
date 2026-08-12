@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -21,10 +22,12 @@ export default function WelcomeContent({
   neighborhoodName: string | null;
   isLoggedIn: boolean;
 }) {
+  const router = useRouter();
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   const [agreed, setAgreed] = useState(false);
+  const [ready, setReady] = useState(false);
 
   const badCode = Boolean(code) && !neighborhoodName;
   const noEntryPoint = !isLoggedIn && !code;
@@ -32,8 +35,26 @@ export default function WelcomeContent({
 
   useEffect(() => {
     const ua = window.navigator.userAgent;
-    setIsIOS(/iPad|iPhone|iPod/.test(ua) && !("MSStream" in window));
-    setIsStandalone(window.matchMedia("(display-mode: standalone)").matches);
+    const iosDetected = /iPad|iPhone|iPod/.test(ua) && !("MSStream" in window);
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+
+    setIsIOS(iosDetected);
+    setIsStandalone(standalone);
+
+    // The installed app was very likely bookmarked to whatever URL was
+    // showing when "Add to Home Screen" was tapped (a well-known iOS quirk
+    // — it doesn't reliably honor the manifest's start_url). Rather than
+    // depend on that, self-correct on every standalone launch: skip the
+    // onboarding content entirely and go straight to where the person
+    // actually belongs.
+    if (standalone) {
+      router.replace(isLoggedIn ? "/browse" : "/login");
+      return;
+    }
+
+    setReady(true);
 
     function handleBeforeInstallPrompt(e: Event) {
       e.preventDefault();
@@ -42,7 +63,7 @@ export default function WelcomeContent({
     window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
     return () =>
       window.removeEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
-  }, []);
+  }, [isLoggedIn, router]);
 
   async function handleInstallClick() {
     if (!deferredPrompt) return;
@@ -51,15 +72,19 @@ export default function WelcomeContent({
     setDeferredPrompt(null);
   }
 
-function handleContinue() {
-  acceptTermsCookie();
-  if (isLoggedIn) {
-    window.location.href = code ? `/join?invite=${encodeURIComponent(code)}` : "/browse";
-    return;
+  function handleContinue() {
+    acceptTermsCookie();
+    if (isLoggedIn) {
+      window.location.href = "/browse";
+      return;
+    }
+    const codeParam = code ? `?invite=${encodeURIComponent(code)}` : "";
+    window.location.href = code ? `/signup${codeParam}` : "/login";
   }
-  const codeParam = code ? `?invite=${encodeURIComponent(code)}` : "";
-  window.location.href = code ? `/signup${codeParam}` : "/login";
-}
+
+  // Standalone launches redirect immediately above — render nothing while
+  // that's in flight, so there's no flash of onboarding content.
+  if (!ready) return null;
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-10">
@@ -94,9 +119,10 @@ function handleContinue() {
           </li>
         </ul>
         <p className="mt-3 text-sm">
-          Not a Central Tacoma resident? {" "}
+          Not a Central Tacoma resident? Starting in central but spreading
+          out!{" "}
           <a
-            href="mailto:stovall.joshua@gmail.com?subject=Requesting%20a%20Commons%20invite%20link"
+            href="mailto:hello@example.com?subject=Requesting%20a%20Commons%20invite%20link"
             className="font-mono text-xs font-bold underline"
           >
             Click here to request the link for your neighborhood.
@@ -115,7 +141,7 @@ function handleContinue() {
             Be kind (hateful, bigoted, harmful and generally offensive content
             is prohibited. If you&apos;re not sure if something you want to
             post is offensive, that&apos;s probably a good indicator that you
-            should keep it to yourself)
+            should keep it to yourself or save for your NextDoor post)
           </li>
           <li>
             Don&apos;t share items that are illegal or specially regulated
@@ -123,11 +149,11 @@ function handleContinue() {
           </li>
           <li>
             Don&apos;t borrow items to do illegal things (e.g. borrowing a
-            ski-mask and duffle bag to use in a robbery)
+            ski-mask and duffle bag to aid in the robbery of an art gallery)
           </li>
           <li>
             Quickly return items after use (indefinite borrowing is the same
-            as stealing)
+            as stealing — don&apos;t be that person)
           </li>
           <li>
             Take good care of the borrowed items and be willing to
@@ -203,29 +229,28 @@ function handleContinue() {
             </label>
 
             {isStandalone ? (
-              <button
-                disabled={!agreed}
-                onClick={handleContinue}
-                className="commons-button w-full text-sm disabled:opacity-40"
-              >
-                Continue
-              </button>
-            ) : isIOS ? (
-              <div className="flex flex-col gap-2">
-                <p className="font-mono text-xs">
-                  On iPhone: tap the Share icon <strong>⬆️</strong> in
-                  Safari, then choose{" "}
-                  <strong>&ldquo;Add to Home Screen.&rdquo;</strong>
-                </p>
-                <button
-                  disabled={!agreed}
-                  onClick={handleContinue}
-                  className="commons-button w-full text-sm disabled:opacity-40"
-                >
-                  Got it — continue
-                </button>
-              </div>
-            ) : deferredPrompt ? (
+  <button
+    disabled={!agreed}
+    onClick={handleContinue}
+    className="commons-button w-full text-sm disabled:opacity-40"
+  >
+    Continue
+  </button>
+) : isIOS ? (
+  <div className="flex flex-col gap-2">
+    <p className="font-mono text-xs">
+      We&apos;ll walk you through adding Commons to your home screen once
+      you&apos;re signed in.
+    </p>
+    <button
+      disabled={!agreed}
+      onClick={handleContinue}
+      className="commons-button w-full text-sm disabled:opacity-40"
+    >
+      Continue
+    </button>
+  </div>
+) : deferredPrompt ? (
               <button
                 disabled={!agreed}
                 onClick={async () => {
