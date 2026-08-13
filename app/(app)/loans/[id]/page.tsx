@@ -31,7 +31,7 @@ export default async function LoanDetailPage({
   if (loanError) console.error("Loan detail query error:", loanError);
   if (!loan) notFound();
 
-  const defaultDueDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+  const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   .toISOString()
   .slice(0, 10);
 
