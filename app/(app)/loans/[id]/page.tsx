@@ -2,6 +2,7 @@ import { respondToLoan, sendLoanMessage, flagContent } from "@/app/actions";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime } from "@/lib/format";
+import { formatDate } from "@/lib/format";
 
 
 export default async function LoanDetailPage({
@@ -29,6 +30,11 @@ export default async function LoanDetailPage({
 
   if (loanError) console.error("Loan detail query error:", loanError);
   if (!loan) notFound();
+
+  const defaultDueDate = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000)
+  .toISOString()
+  .slice(0, 10);
+
 
   const isBorrower = loan.borrower?.id === user.id;
   const isOwner = loan.owner?.id === user.id;
@@ -61,9 +67,23 @@ export default async function LoanDetailPage({
             : `owned by ${loan.owner?.display_name}`}{" "}
           · {formatDateTime(loan.requested_at)}
         </p>
-        <span className="commons-stamp commons-stamp-teal mt-2 inline-block">
-          {loan.status.replace("_", " ")}
-        </span>
+ <span
+  className={`commons-stamp mt-2 inline-block ${
+    loan.status === "overdue"
+      ? "commons-stamp-brick"
+      : loan.status === "returned"
+        ? "commons-stamp-olive"
+        : "commons-stamp-teal"
+  }`}
+>
+  {loan.status.replace("_", " ")}
+</span>
+{loan.due_date && (
+  <p className="mt-2 text-sm">
+    {loan.status === "overdue" ? "Return was requested by" : "Return requested by"}:{" "}
+    {formatDate(loan.due_date)}
+  </p>
+)}
 
         {loan.borrower_message && (
           <p className="mt-2 text-sm italic">
@@ -89,16 +109,25 @@ export default async function LoanDetailPage({
                 </form>
               </>
             )}
-            {loan.status === "approved" && (
-              <form action={respondToLoan}>
-                <input type="hidden" name="loan_id" value={loan.id} />
-                <input type="hidden" name="action" value="checkout" />
-                <button className="commons-button text-xs">
-                  Mark checked out
-                </button>
-              </form>
-            )}
-            {loan.status === "checked_out" && (
+{loan.status === "approved" && (
+  <form action={respondToLoan} className="mt-1 flex flex-wrap items-end gap-2">
+    <input type="hidden" name="loan_id" value={loan.id} />
+    <input type="hidden" name="action" value="checkout" />
+    <label className="font-mono text-[10px] font-bold uppercase">
+      Requested return-by date (optional)
+      <input
+        type="date"
+        name="due_date"
+        defaultValue={defaultDueDate}
+        className="commons-input mt-1 block text-xs"
+      />
+    </label>
+    <button className="commons-button text-xs">
+      Mark checked out
+    </button>
+  </form>
+)}
+            {(loan.status === "checked_out" || loan.status === "overdue") && (
               <form action={respondToLoan}>
                 <input type="hidden" name="loan_id" value={loan.id} />
                 <input type="hidden" name="action" value="return" />

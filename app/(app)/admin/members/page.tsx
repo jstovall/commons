@@ -15,7 +15,7 @@ const PLATFORM_ICON: Record<string, string> = {
   other: "💻",
 };
 
-const OPEN_LOAN_STATUSES = ["requested", "approved", "checked_out"] as const;
+const OPEN_LOAN_STATUSES = ["requested", "approved", "checked_out", "overdue"] as const;
 
 export default async function AdminMembersPage() {
   const supabase = await createClient();

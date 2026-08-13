@@ -90,7 +90,7 @@ if (selectedFilter === "favorites" && favoriteIds.size === 0) {
     .from("loans")
     .select("id, item_id, status")
     .eq("borrower_id", user.id)
-    .in("status", ["requested", "approved", "checked_out"]);
+    .in("status", ["requested", "approved", "checked_out", "overdue"]);
   const myLoanMap = new Map(
     ((myLoans ?? []) as { id: string; item_id: string; status: string }[]).map(
       (l) => [l.item_id, { id: l.id, status: l.status }]

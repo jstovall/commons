@@ -16,6 +16,7 @@ const loanStatusStamp: Record<string, string> = {
   returned: "commons-stamp commons-stamp-olive",
   denied: "commons-stamp",
   cancelled: "commons-stamp",
+  overdue: "commons-stamp commons-stamp-brick",
 };
 
 export default async function MyItemsPage({
@@ -106,7 +107,7 @@ async function LendingView({
     )
     .eq("owner_id", userId)
     .eq("neighborhood_id", neighborhoodId)
-    .in("status", ["requested", "approved", "checked_out"])
+    .in("status", ["requested", "approved", "checked_out", "overdue"])
     .order("requested_at", { ascending: false });
   if (loansError) console.error("Incoming loans query error:", loansError);
 
@@ -163,7 +164,7 @@ async function LendingView({
                       </button>
                     </form>
                   )}
-                  {loan.status === "checked_out" && (
+                  {(loan.status === "checked_out" || loan.status === "overdue") && (
                     <form action={respondToLoan}>
                       <input type="hidden" name="loan_id" value={loan.id} />
                       <input type="hidden" name="action" value="return" />
@@ -241,12 +242,12 @@ async function BorrowingView({
     .order("requested_at", { ascending: false });
   if (error) console.error("Borrowing loans query error:", error);
 
-  const openLoans = (loans ?? []).filter((l) =>
-    ["requested", "approved", "checked_out"].includes(l.status)
-  );
-  const closedLoans = (loans ?? []).filter(
-    (l) => !["requested", "approved", "checked_out"].includes(l.status)
-  );
+const openLoans = (loans ?? []).filter((l) =>
+  ["requested", "approved", "checked_out", "overdue"].includes(l.status)
+);
+const closedLoans = (loans ?? []).filter(
+  (l) => !["requested", "approved", "checked_out", "overdue"].includes(l.status)
+);
 
   return (
     <>

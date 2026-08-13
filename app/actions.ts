@@ -394,15 +394,26 @@ export async function respondToLoan(formData: FormData) {
 
   type LoanUpdate = Database["public"]["Tables"]["loans"]["Update"];
 
-  const statusMap: Record<string, LoanUpdate> = {
-    approve: { status: "approved", approved_at: new Date().toISOString() },
-    deny: { status: "denied" },
-    checkout: { status: "checked_out", checked_out_at: new Date().toISOString() },
-    return: { status: "returned", returned_at: new Date().toISOString() },
-    cancel: { status: "cancelled" },
-  };
+  let update: LoanUpdate;
 
-  const { error } = await supabase.from("loans").update(statusMap[action]).eq("id", loanId);
+  if (action === "checkout") {
+    const dueDate = (formData.get("due_date") as string) || null;
+    update = {
+      status: "checked_out",
+      checked_out_at: new Date().toISOString(),
+      due_date: dueDate,
+    };
+  } else {
+    const statusMap: Record<string, LoanUpdate> = {
+      approve: { status: "approved", approved_at: new Date().toISOString() },
+      deny: { status: "denied" },
+      return: { status: "returned", returned_at: new Date().toISOString() },
+      cancel: { status: "cancelled" },
+    };
+    update = statusMap[action];
+  }
+
+  const { error } = await supabase.from("loans").update(update).eq("id", loanId);
   if (error) throw new Error(error.message);
   revalidatePath("/browse", "page");
   revalidatePath("/my-items", "page");
