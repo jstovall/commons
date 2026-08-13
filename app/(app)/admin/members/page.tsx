@@ -1,13 +1,13 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
+import { formatDate } from "@/lib/format";
 import {
   removeMember,
   updateMemberRole,
   regenerateInviteCode,
   startAdminMemberThread,
 } from "@/app/actions";
-import { formatDate } from "@/lib/format";
 
 const PLATFORM_ICON: Record<string, string> = {
   ios: "🍎 iOS",
@@ -15,6 +15,7 @@ const PLATFORM_ICON: Record<string, string> = {
   other: "💻 Web",
 };
 
+const OPEN_LOAN_STATUSES = ["requested", "approved", "checked_out"] as const;
 
 export default async function AdminMembersPage() {
   const supabase = await createClient();
@@ -44,14 +45,14 @@ export default async function AdminMembersPage() {
     .order("joined_at", { ascending: true });
   if (error) console.error("Admin members query error:", error);
 
-const { data: notifStatus, error: notifError } = await supabase.rpc(
-  "get_notification_status",
-  { _neighborhood_id: myMembership.neighborhood_id }
-);
-if (notifError) console.error("Notification status query error:", notifError);
-const subscribedIds = new Set(
-  (notifStatus ?? []).filter((n) => n.has_subscription).map((n) => n.user_id)
-);
+  const { data: notifStatus, error: notifError } = await supabase.rpc(
+    "get_notification_status",
+    { _neighborhood_id: myMembership.neighborhood_id }
+  );
+  if (notifError) console.error("Notification status query error:", notifError);
+  const subscribedIds = new Set(
+    (notifStatus ?? []).filter((n) => n.has_subscription).map((n) => n.user_id)
+  );
 
   const { data: neighborhoodItems } = await supabase
     .from("items")
@@ -61,6 +62,22 @@ const subscribedIds = new Set(
   const itemCountMap = new Map<string, number>();
   for (const item of neighborhoodItems ?? []) {
     itemCountMap.set(item.owner_id, (itemCountMap.get(item.owner_id) ?? 0) + 1);
+  }
+
+  const { data: openLoans, error: loansError } = await supabase
+    .from("loans")
+    .select("borrower_id, owner_id")
+    .eq("neighborhood_id", myMembership.neighborhood_id)
+    .in("status", OPEN_LOAN_STATUSES);
+  if (loansError) console.error("Open loans query error:", loansError);
+  const borrowingCountMap = new Map<string, number>();
+  const lendingCountMap = new Map<string, number>();
+  for (const loan of openLoans ?? []) {
+    borrowingCountMap.set(
+      loan.borrower_id,
+      (borrowingCountMap.get(loan.borrower_id) ?? 0) + 1
+    );
+    lendingCountMap.set(loan.owner_id, (lendingCountMap.get(loan.owner_id) ?? 0) + 1);
   }
 
   const { data: lastLogins, error: loginsError } = await supabase.rpc(
@@ -102,6 +119,8 @@ const subscribedIds = new Set(
           const installed = Boolean(m.profile?.last_standalone_at);
           const notifOn = subscribedIds.has(m.user_id);
           const itemCount = itemCountMap.get(m.user_id) ?? 0;
+          const borrowingCount = borrowingCountMap.get(m.user_id) ?? 0;
+          const lendingCount = lendingCountMap.get(m.user_id) ?? 0;
           const lastLogin = lastLoginMap.get(m.user_id) ?? null;
 
           return (
@@ -115,12 +134,11 @@ const subscribedIds = new Set(
                 <span title={notifOn ? "Notifications enabled" : "Notifications off"}>
                   {notifOn ? "🔔" : "🔕"}
                 </span>
-                <span title="Active items shared">
-                  🏷️ {itemCount}
+                <span title="Active items shared">🏷️ {itemCount}</span>
+                <span title="Currently borrowing / currently lending out">
+                  ↓ {borrowingCount} borrow · ↑ {lendingCount} lending
                 </span>
-<span title="Last login">
-  🕓 {lastLogin ? formatDate(lastLogin) : "never"}
-</span>
+                <span title="Last login"> 🕓 {lastLogin ? formatDate(lastLogin) : "never"} </span>
                 {installed && (
                   <span title="Installed platform">
                     {PLATFORM_ICON[m.profile?.platform ?? "other"]}
@@ -159,8 +177,15 @@ const subscribedIds = new Set(
                       <input type="hidden" name="user_id" value={m.user_id} />
                       <button className="commons-button commons-button-danger w-full text-xs">
                         Remove
+                        {(itemCount > 0 || borrowingCount > 0 || lendingCount > 0) &&
+                          " ⚠️"}
                       </button>
                     </form>
+                    {(itemCount > 0 || borrowingCount > 0 || lendingCount > 0) && (
+                      <p className="font-mono text-[10px] text-commons-brick">
+                        Has active items or loans — these won&apos;t auto-resolve.
+                      </p>
+                    )}
                   </div>
                 </details>
               )}
