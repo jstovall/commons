@@ -127,12 +127,16 @@ if (selectedFilter === "favorites" && favoriteIds.size === 0) {
                     shared by {item.owner?.display_name}
                   </p>
                 </div>
-                <form action={toggleFavorite}>
-                  <input type="hidden" name="item_id" value={item.id} />
-                  <button type="submit" aria-label="Favorite" className="text-2xl">
-                    {isFavorited ? "♥" : "♡"}
-                  </button>
-                </form>
+<form action={toggleFavorite}>
+  <input type="hidden" name="item_id" value={item.id} />
+  <button
+    type="submit"
+    aria-label="Favorite"
+    className={`text-2xl ${isFavorited ? "text-commons-salmon" : "text-commons-ink/40"}`}
+  >
+    {isFavorited ? "♥" : "♡"}
+  </button>
+</form>
               </div>
 
               {item.image_url && (
