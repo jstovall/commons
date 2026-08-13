@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { updateItem, deleteItem } from "@/app/actions";
+import { updateItem, deleteItem, toggleItemAvailability } from "@/app/actions";
 import ImageFileInput from "./ImageFileInput";
 
 interface Item {
@@ -10,6 +10,7 @@ interface Item {
   description: string | null;
   image_url: string | null;
   category_id: string | null;
+  status: string;
 }
 
 export default function EditItemForm({
@@ -21,6 +22,9 @@ export default function EditItemForm({
 }) {
   const [isPending, startTransition] = useTransition();
   const [saved, setSaved] = useState(false);
+  const [isToggling, startToggleTransition] = useTransition();
+
+  const canToggle = item.status === "available" || item.status === "unavailable";
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -33,68 +37,92 @@ export default function EditItemForm({
     });
   }
 
+  function handleToggle() {
+    const formData = new FormData();
+    formData.set("item_id", item.id);
+    startToggleTransition(async () => {
+      await toggleItemAvailability(formData);
+    });
+  }
+
   return (
-    <details className="mt-3">
-      <summary className="cursor-pointer font-mono text-xs font-bold">
-        edit
-      </summary>
-      <form onSubmit={handleSubmit} className="mt-2 flex flex-col gap-2">
-        <input type="hidden" name="item_id" value={item.id} />
-        <input type="hidden" name="existing_image_url" value={item.image_url ?? ""} />
-        <input
-          name="name"
-          defaultValue={item.name}
-          onChange={() => setSaved(false)}
-          className="commons-input text-sm"
-        />
-        <select
-          name="category_id"
-          defaultValue={item.category_id ?? ""}
-          onChange={() => setSaved(false)}
-          className="commons-input text-sm"
+    <>
+      {canToggle && (
+        <button
+          onClick={handleToggle}
+          disabled={isToggling}
+          className="commons-button commons-button-secondary mt-2 text-xs disabled:opacity-50"
         >
-          <option value="">Choose a category</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.name}
-            </option>
-          ))}
-        </select>
-        <textarea
-          name="description"
-          defaultValue={item.description ?? ""}
-          onChange={() => setSaved(false)}
-          className="commons-input text-sm"
-        />
-        {item.image_url && (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={item.image_url}
-            alt=""
-            className="h-24 w-24 rounded-md border-2 border-commons-ink object-cover"
-          />
-        )}
-        <ImageFileInput name="image_file" label="Replace photo (optional)" />
-        <div className="flex items-center gap-3">
-          <button
-            disabled={isPending}
-            className="commons-button self-start text-xs disabled:opacity-50"
-          >
-            {isPending ? "Saving…" : "Save"}
-          </button>
-          {saved && !isPending && (
-            <span className="font-mono text-xs font-bold text-commons-teal">
-              ✓ Saved
-            </span>
-          )}
-        </div>
-      </form>
-      <form action={deleteItem} className="mt-2">
-        <input type="hidden" name="item_id" value={item.id} />
-        <button className="font-mono text-xs font-bold text-commons-brick underline">
-          Delete item
+          {isToggling
+            ? "…"
+            : item.status === "available"
+              ? "Mark unavailable"
+              : "Mark available"}
         </button>
-      </form>
-    </details>
+      )}
+
+      <details className="mt-2">
+        <summary className="cursor-pointer font-mono text-xs font-bold">
+          edit
+        </summary>
+        <form onSubmit={handleSubmit} className="mt-2 flex flex-col gap-2">
+          <input type="hidden" name="item_id" value={item.id} />
+          <input type="hidden" name="existing_image_url" value={item.image_url ?? ""} />
+          <input
+            name="name"
+            defaultValue={item.name}
+            onChange={() => setSaved(false)}
+            className="commons-input text-sm"
+          />
+          <select
+            name="category_id"
+            defaultValue={item.category_id ?? ""}
+            onChange={() => setSaved(false)}
+            className="commons-input text-sm"
+          >
+            <option value="">Choose a category</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.name}
+              </option>
+            ))}
+          </select>
+          <textarea
+            name="description"
+            defaultValue={item.description ?? ""}
+            onChange={() => setSaved(false)}
+            className="commons-input text-sm"
+          />
+          {item.image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={item.image_url}
+              alt=""
+              className="h-24 w-24 rounded-md border-2 border-commons-ink object-cover"
+            />
+          )}
+          <ImageFileInput name="image_file" label="Replace photo (optional)" />
+          <div className="flex items-center gap-3">
+            <button
+              disabled={isPending}
+              className="commons-button self-start text-xs disabled:opacity-50"
+            >
+              {isPending ? "Saving…" : "Save"}
+            </button>
+            {saved && !isPending && (
+              <span className="font-mono text-xs font-bold text-commons-teal">
+                ✓ Saved
+              </span>
+            )}
+          </div>
+        </form>
+        <form action={deleteItem} className="mt-2">
+          <input type="hidden" name="item_id" value={item.id} />
+          <button className="font-mono text-xs font-bold text-commons-brick underline">
+            Delete item
+          </button>
+        </form>
+      </details>
+    </>
   );
 }

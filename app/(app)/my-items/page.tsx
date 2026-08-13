@@ -75,6 +75,14 @@ async function LendingView({
 }) {
   const supabase = await createClient();
 
+const itemStatusStamp: Record<string, string> = {
+  available: "commons-stamp commons-stamp-teal",
+  requested: "commons-stamp commons-stamp-brick",
+  checked_out: "commons-stamp commons-stamp-brick",
+  overdue: "commons-stamp commons-stamp-brick",
+  unavailable: "commons-stamp",
+};
+
   const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
   .toISOString()
   .slice(0, 10);
@@ -216,9 +224,9 @@ async function LendingView({
                     <h3 className="commons-heading text-2xl leading-tight">
                       {item.name}
                     </h3>
-                    <span className="commons-stamp commons-stamp-teal">
-                      {item.status.replace("_", " ")}
-                    </span>
+<span className={itemStatusStamp[item.status] ?? "commons-stamp"}>
+  {item.status.replace("_", " ")}
+</span>
                   </div>
                   <EditItemForm item={item} categories={categories ?? []} />
                 </div>

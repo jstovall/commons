@@ -382,6 +382,35 @@ export async function sendLoanMessage(formData: FormData) {
   revalidatePath(`/loans/${loanId}`, "page");
 }
 
+export async function toggleItemAvailability(formData: FormData) {
+  const { supabase, user } = await requireActiveMembership();
+  const itemId = formData.get("item_id") as string;
+
+  const { data: item } = await supabase
+    .from("items")
+    .select("status, owner_id")
+    .eq("id", itemId)
+    .maybeSingle();
+
+  if (!item || item.owner_id !== user.id) {
+    throw new Error("Not authorized");
+  }
+  if (item.status !== "available" && item.status !== "unavailable") {
+    throw new Error("Can't change availability while a loan is in progress");
+  }
+
+  const newStatus = item.status === "available" ? "unavailable" : "available";
+
+  const { error } = await supabase
+    .from("items")
+    .update({ status: newStatus })
+    .eq("id", itemId);
+  if (error) throw new Error(error.message);
+
+  revalidatePath("/my-items", "page");
+  revalidatePath("/browse", "page");
+}
+
 export async function respondToLoan(formData: FormData) {
   const { supabase } = await requireActiveMembership();
   const loanId = formData.get("loan_id") as string;
