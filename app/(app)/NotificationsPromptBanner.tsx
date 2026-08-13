@@ -68,7 +68,7 @@ export default function NotificationsPromptBanner() {
   return (
     <div className="mx-4 mt-4 flex items-start justify-between gap-3 rounded-lg border-2 border-commons-ink bg-commons-teal px-3 py-2 text-commons-cream">
       <p className="text-sm">
-        <strong>Turn on notifications</strong> so you don&apos;t miss borrow
+        <strong>Turn on notifications </strong> so you don&apos;t miss borrow
         requests, messages, or replies.
       </p>
       <div className="flex shrink-0 gap-2">

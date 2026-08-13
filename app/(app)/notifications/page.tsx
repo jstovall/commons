@@ -1,16 +1,7 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { markNotificationRead, markAllNotificationsRead } from "@/app/actions";
-
-function formatDateTime(dateString: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(dateString));
-}
+import { formatDateTime } from "@/lib/format";
 
 export default async function NotificationsPage() {
   const supabase = await createClient();

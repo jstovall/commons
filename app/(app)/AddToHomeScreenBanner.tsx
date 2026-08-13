@@ -52,7 +52,7 @@ export default function AddToHomeScreenBanner() {
   return (
     <div className="mx-4 mt-4 flex items-start justify-between gap-3 rounded-lg border-2 border-commons-ink bg-commons-ochre px-3 py-2">
 <p className="text-sm">
-  <strong>Add Commons to your home screen</strong> to get notifications
+  <strong>Add Commons to your home screen </strong> to get notifications
   for new requests and messages. In Safari, tap the Share button{" "}
   <ShareIcon /> at the bottom of the screen, scroll down, and select{" "}
   <strong>&ldquo;Add to Home Screen,&rdquo;</strong> then tap{" "}

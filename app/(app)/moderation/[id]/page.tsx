@@ -1,16 +1,8 @@
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sendModerationMessage } from "@/app/actions";
+import { formatDateTime } from "@/lib/format";
 
-function formatDateTime(dateString: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  }).format(new Date(dateString));
-}
 
 export default async function ModerationThreadPage({
   params,

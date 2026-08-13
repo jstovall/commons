@@ -2,6 +2,7 @@ import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
 import { respondToFeedback } from "@/app/actions";
+import { formatDateTime } from "@/lib/format";
 
 const TOPIC_LABELS: Record<string, string> = {
   asks: "Asks",
@@ -12,13 +13,6 @@ const TOPIC_LABELS: Record<string, string> = {
   other: "Something else",
 };
 
-function formatDateTime(dateString: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  }).format(new Date(dateString));
-}
 
 export default async function AdminFeedbackPage() {
   const supabase = await createClient();

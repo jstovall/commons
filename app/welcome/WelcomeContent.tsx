@@ -141,7 +141,7 @@ export default function WelcomeContent({
             Be kind (hateful, bigoted, harmful and generally offensive content
             is prohibited. If you&apos;re not sure if something you want to
             post is offensive, that&apos;s probably a good indicator that you
-            should keep it to yourself or save for your NextDoor post)
+            should keep it to yourself)
           </li>
           <li>
             Don&apos;t share items that are illegal or specially regulated

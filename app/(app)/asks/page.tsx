@@ -8,6 +8,7 @@ import {
   startAskThread,
 } from "@/app/actions";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
+import { formatDate } from "@/lib/format";
 
 const statusStampClass: Record<string, string> = {
   open: "commons-stamp commons-stamp-teal",
@@ -15,13 +16,6 @@ const statusStampClass: Record<string, string> = {
   cancelled: "commons-stamp",
 };
 
-function formatAskDate(dateString: string) {
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  }).format(new Date(dateString));
-}
 
 export default async function AsksPage() {
   const supabase = await createClient();
@@ -128,7 +122,7 @@ const closedAsks = sortedAsks.filter((a) => a.status !== "open");
                   </h3>
                   <p className="font-mono text-xs text-commons-ink/70">
                     asked by {ask.requester?.display_name} ·{" "}
-                    {formatAskDate(ask.created_at)}
+                    {formatDate(ask.created_at)}
                   </p>
                 </div>
                 <span className={statusStampClass[ask.status] ?? "commons-stamp"}>
@@ -303,7 +297,7 @@ const closedAsks = sortedAsks.filter((a) => a.status !== "open");
             <p className="text-sm font-bold">{ask.title}</p>
             <p className="font-mono text-[10px] text-commons-ink/60">
               asked by {ask.requester?.display_name} ·{" "}
-              {formatAskDate(ask.created_at)}
+              {formatDate(ask.created_at)}
             </p>
           </div>
           <span className={statusStampClass[ask.status] ?? "commons-stamp"}>

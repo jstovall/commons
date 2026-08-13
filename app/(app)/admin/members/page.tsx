@@ -7,6 +7,7 @@ import {
   regenerateInviteCode,
   startAdminMemberThread,
 } from "@/app/actions";
+import { formatDate } from "@/lib/format";
 
 const PLATFORM_ICON: Record<string, string> = {
   ios: "🍎 iOS",
@@ -14,14 +15,6 @@ const PLATFORM_ICON: Record<string, string> = {
   other: "💻 Web",
 };
 
-function formatDate(dateString: string | null) {
-  if (!dateString) return "never";
-  return new Intl.DateTimeFormat("en-US", {
-    month: "short",
-    day: "2-digit",
-    year: "numeric",
-  }).format(new Date(dateString));
-}
 
 export default async function AdminMembersPage() {
   const supabase = await createClient();
@@ -51,11 +44,14 @@ export default async function AdminMembersPage() {
     .order("joined_at", { ascending: true });
   if (error) console.error("Admin members query error:", error);
 
-  const { data: subs } = await supabase
-    .from("push_subscriptions")
-    .select("user_id")
-    .in("user_id", (members ?? []).map((m) => m.user_id));
-  const subscribedIds = new Set((subs ?? []).map((s) => s.user_id));
+const { data: notifStatus, error: notifError } = await supabase.rpc(
+  "get_notification_status",
+  { _neighborhood_id: myMembership.neighborhood_id }
+);
+if (notifError) console.error("Notification status query error:", notifError);
+const subscribedIds = new Set(
+  (notifStatus ?? []).filter((n) => n.has_subscription).map((n) => n.user_id)
+);
 
   const { data: neighborhoodItems } = await supabase
     .from("items")
@@ -122,9 +118,9 @@ export default async function AdminMembersPage() {
                 <span title="Active items shared">
                   🏷️ {itemCount}
                 </span>
-                <span title="Last login">
-                  🕓 {formatDate(lastLogin)}
-                </span>
+<span title="Last login">
+  🕓 {lastLogin ? formatDate(lastLogin) : "never"}
+</span>
                 {installed && (
                   <span title="Installed platform">
                     {PLATFORM_ICON[m.profile?.platform ?? "other"]}
