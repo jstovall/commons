@@ -10,9 +10,9 @@ import {
 } from "@/app/actions";
 
 const PLATFORM_ICON: Record<string, string> = {
-  ios: "🍎 iOS",
-  android: "🤖 Android",
-  other: "💻 Web",
+  ios: "🍎",
+  android: "🤖",
+  other: "💻",
 };
 
 const OPEN_LOAN_STATUSES = ["requested", "approved", "checked_out"] as const;
@@ -136,7 +136,7 @@ export default async function AdminMembersPage() {
                 </span>
                 <span title="Active items shared">🏷️ {itemCount}</span>
                 <span title="Currently borrowing / currently lending out">
-                  ↓ {borrowingCount} borrow · ↑ {lendingCount} lending
+                 ({borrowingCount} borrow · {lendingCount} lending)
                 </span>
                 <span title="Last login"> 🕓 {lastLogin ? formatDate(lastLogin) : "never"} </span>
                 {installed && (
