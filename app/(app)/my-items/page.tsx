@@ -63,6 +63,9 @@ export default async function MyItemsPage({
   );
 }
 
+
+
+
 async function LendingView({
   userId,
   neighborhoodId,
@@ -71,6 +74,10 @@ async function LendingView({
   neighborhoodId: string;
 }) {
   const supabase = await createClient();
+
+  const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  .toISOString()
+  .slice(0, 10);
 
   const { data: categories } = await supabase
     .from("categories")
@@ -155,15 +162,24 @@ async function LendingView({
                       </form>
                     </>
                   )}
-                  {loan.status === "approved" && (
-                    <form action={respondToLoan}>
-                      <input type="hidden" name="loan_id" value={loan.id} />
-                      <input type="hidden" name="action" value="checkout" />
-                      <button className="commons-button text-xs">
-                        Mark checked out
-                      </button>
-                    </form>
-                  )}
+{loan.status === "approved" && (
+  <form action={respondToLoan} className="flex flex-wrap items-end gap-2">
+    <input type="hidden" name="loan_id" value={loan.id} />
+    <input type="hidden" name="action" value="checkout" />
+    <label className="font-mono text-[10px] font-bold uppercase">
+      Return-by (optional)
+      <input
+        type="date"
+        name="due_date"
+        defaultValue={defaultDueDate}
+        className="commons-input mt-1 block text-xs"
+      />
+    </label>
+    <button className="commons-button text-xs">
+      Mark checked out
+    </button>
+  </form>
+)}
                   {(loan.status === "checked_out" || loan.status === "overdue") && (
                     <form action={respondToLoan}>
                       <input type="hidden" name="loan_id" value={loan.id} />
