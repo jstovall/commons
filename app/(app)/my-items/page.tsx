@@ -75,17 +75,13 @@ async function LendingView({
 }) {
   const supabase = await createClient();
 
-const itemStatusStamp: Record<string, string> = {
-  available: "commons-stamp commons-stamp-teal",
-  requested: "commons-stamp commons-stamp-brick",
-  checked_out: "commons-stamp commons-stamp-brick",
-  overdue: "commons-stamp commons-stamp-brick",
-  unavailable: "commons-stamp",
-};
-
-  const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-  .toISOString()
-  .slice(0, 10);
+  const itemStatusStamp: Record<string, string> = {
+    available: "commons-stamp commons-stamp-teal",
+    requested: "commons-stamp commons-stamp-brick",
+    checked_out: "commons-stamp commons-stamp-brick",
+    overdue: "commons-stamp commons-stamp-brick",
+    unavailable: "commons-stamp",
+  };
 
   const { data: categories } = await supabase
     .from("categories")
@@ -128,17 +124,14 @@ const itemStatusStamp: Record<string, string> = {
 
   return (
     <>
-      <NewItemForm categories={categories ?? []} />
-
       {incomingLoans && incomingLoans.length > 0 && (
         <div className="mb-8">
           <h3 className="mb-3 font-mono text-sm font-bold uppercase">
-            Requests on your items
+            Borrow requests
           </h3>
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-3">
             {incomingLoans.map((loan) => (
-              <div key={loan.id} className="commons-card p-4">
-                <div className="commons-tape" />
+              <div key={loan.id} className="commons-card-flat p-3">
                 <p className="text-sm">
                   <span className="font-mono font-bold">
                     {loan.borrower?.display_name}
@@ -151,7 +144,7 @@ const itemStatusStamp: Record<string, string> = {
                     &ldquo;{loan.borrower_message}&rdquo;
                   </p>
                 )}
-                <div className="mt-3 flex flex-wrap gap-2">
+                <div className="mt-2 flex flex-wrap gap-2">
                   {loan.status === "requested" && (
                     <>
                       <form action={respondToLoan}>
@@ -170,24 +163,28 @@ const itemStatusStamp: Record<string, string> = {
                       </form>
                     </>
                   )}
-{loan.status === "approved" && (
-  <form action={respondToLoan} className="flex flex-wrap items-end gap-2">
-    <input type="hidden" name="loan_id" value={loan.id} />
-    <input type="hidden" name="action" value="checkout" />
-    <label className="font-mono text-[10px] font-bold uppercase">
-      Return-by (optional)
-      <input
-        type="date"
-        name="due_date"
-        defaultValue={defaultDueDate}
-        className="commons-input mt-1 block text-xs"
-      />
-    </label>
-    <button className="commons-button text-xs">
-      Mark checked out
-    </button>
-  </form>
-)}
+                  {loan.status === "approved" && (
+                    <form action={respondToLoan} className="flex flex-wrap items-end gap-2">
+                      <input type="hidden" name="loan_id" value={loan.id} />
+                      <input type="hidden" name="action" value="checkout" />
+                      <label className="font-mono text-[10px] font-bold uppercase">
+                        Return-by (optional)
+                        <input
+                          type="date"
+                          name="due_date"
+                          defaultValue={
+                            new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+                              .toISOString()
+                              .slice(0, 10)
+                          }
+                          className="commons-input mt-1 block text-xs"
+                        />
+                      </label>
+                      <button className="commons-button text-xs">
+                        Mark checked out
+                      </button>
+                    </form>
+                  )}
                   {(loan.status === "checked_out" || loan.status === "overdue") && (
                     <form action={respondToLoan}>
                       <input type="hidden" name="loan_id" value={loan.id} />
@@ -210,23 +207,22 @@ const itemStatusStamp: Record<string, string> = {
         </div>
       )}
 
-      <div className="flex flex-col gap-10">
+      <NewItemForm categories={categories ?? []} />
+
+      <div className="mt-8 flex flex-col gap-8">
         {sortedGroups.map(([groupName, groupItems]) => (
           <div key={groupName}>
-            <h3 className="mb-4 border-b-2 border-dashed border-commons-ink/40 pb-1 font-mono text-sm font-bold uppercase tracking-wide">
+            <h3 className="mb-3 border-b-2 border-dashed border-commons-ink/40 pb-1 font-mono text-sm font-bold uppercase tracking-wide">
               {groupName}
             </h3>
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {groupItems?.map((item) => (
-                <div key={item.id} className="commons-card p-4">
-                  <div className="commons-tape" />
+                <div key={item.id} className="commons-card-flat p-3">
                   <div className="flex items-center justify-between">
-                    <h3 className="commons-heading text-2xl leading-tight">
-                      {item.name}
-                    </h3>
-<span className={itemStatusStamp[item.status] ?? "commons-stamp"}>
-  {item.status.replace("_", " ")}
-</span>
+                    <h3 className="text-sm font-bold">{item.name}</h3>
+                    <span className={itemStatusStamp[item.status] ?? "commons-stamp"}>
+                      {item.status.replace("_", " ")}
+                    </span>
                   </div>
                   <EditItemForm item={item} categories={categories ?? []} />
                 </div>

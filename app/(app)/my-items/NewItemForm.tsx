@@ -27,11 +27,11 @@ export default function NewItemForm({
   }
 
   return (
-    <details
-      open={open}
-      onToggle={(e) => setOpen(e.currentTarget.open)}
-      className="commons-card mb-8 p-4"
-    >
+<details
+  open={open}
+  onToggle={(e) => setOpen(e.currentTarget.open)}
+  className="commons-card-flat p-4"
+>
       <summary className="cursor-pointer font-mono text-sm font-bold">
         + post a new item
       </summary>
