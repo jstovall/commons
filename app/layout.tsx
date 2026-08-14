@@ -3,6 +3,7 @@ import { Caveat, Space_Grotesk, Space_Mono } from "next/font/google";
 import "./globals.css";
 import ServiceWorkerRegistration from "./ServiceWorkerRegistration";
 
+
 const caveat = Caveat({
   subsets: ["latin"],
   weight: ["600", "700"],
@@ -40,12 +41,14 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  return (
+return (
+
     <html lang="en" className={`${caveat.variable} ${spaceGrotesk.variable} ${spaceMono.variable}`}>
-     <body className="min-h-screen bg-commons-page font-body text-commons-ink antialiased">
-         <ServiceWorkerRegistration />
+      <body className="min-h-screen bg-commons-page font-body text-commons-ink antialiased">
+        <ServiceWorkerRegistration />
         {children}
       </body>
     </html>
-  );
+
+);
 }

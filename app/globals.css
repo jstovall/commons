@@ -225,8 +225,8 @@ body {
 
 ::view-transition-old(root),
 ::view-transition-new(root) {
-  animation-duration: 0.22s;
-  animation-timing-function: ease-in-out;
+  animation-duration: 0.28s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 html[data-transition-direction="forward"]::view-transition-old(root) {
@@ -242,7 +242,7 @@ html[data-transition-direction="back"]::view-transition-new(root) {
   animation-name: commons-slide-in-left;
 }
 
-@keyframes commons-slide-out-left { to { transform: translateX(-25%); opacity: 0; } }
-@keyframes commons-slide-in-right { from { transform: translateX(25%); opacity: 0; } }
-@keyframes commons-slide-out-right { to { transform: translateX(25%); opacity: 0; } }
-@keyframes commons-slide-in-left { from { transform: translateX(-25%); opacity: 0; } }
+@keyframes commons-slide-out-left { to { transform: translateX(-100%); } }
+@keyframes commons-slide-in-right { from { transform: translateX(100%); } }
+@keyframes commons-slide-out-right { to { transform: translateX(100%); } }
+@keyframes commons-slide-in-left { from { transform: translateX(-100%); } }
