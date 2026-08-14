@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Crest from "@/app/Crest";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -88,9 +89,13 @@ export default function WelcomeContent({
 
   return (
     <main className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-10">
-      <span className="commons-heading self-center text-4xl">
-        {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
-      </span>
+<div className="flex flex-col items-center">
+{/* eslint-disable-next-line @next/next/no-img-element */}
+<img src="/icons/icon-simple.png" alt="" className="h-14 w-14" />
+  <span className="commons-heading mt-2 text-4xl">
+    {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
+  </span>
+</div>
 
       {badCode && (
         <p className="mt-2 text-center font-mono text-xs text-commons-brick">
@@ -106,6 +111,10 @@ export default function WelcomeContent({
       )}
 
       <div className="commons-card-flat mt-6 p-5">
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-commons-ink/50">
+    Plate No. 1
+  </p>
+  <hr className="commons-hairline mb-3" />
         <h2 className="commons-heading mb-2 text-xl">Note about install &amp; verification</h2>
         <ul className="flex list-disc flex-col gap-2 pl-5 text-sm">
           <li>
@@ -131,6 +140,10 @@ export default function WelcomeContent({
       </div>
 
       <div className="commons-card-flat mt-4 p-5">
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-commons-ink/50">
+    Plate No. 2
+  </p>
+  <hr className="commons-hairline mb-3" />
         <h2 className="commons-heading mb-2 text-xl">Expectations for use</h2>
         <p className="mb-2 text-sm">
           Be a &ldquo;good neighbor&rdquo; in the Commons, which generally
@@ -171,6 +184,10 @@ export default function WelcomeContent({
       </div>
 
       <div className="commons-card-flat mt-4 p-5">
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-commons-ink/50">
+    Plate No. 3
+  </p>
+  <hr className="commons-hairline mb-3" />
         <h2 className="commons-heading mb-2 text-xl">
           Risk and responsibility are shared
         </h2>
@@ -203,6 +220,10 @@ export default function WelcomeContent({
       </div>
 
       <div className="commons-card-flat mt-4 p-5">
+          <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-commons-ink/50">
+    Plate No. 4
+  </p>
+  <hr className="commons-hairline mb-3" />
         <h2 className="commons-heading mb-2 text-xl">Accept and install</h2>
 
         {blocked ? (

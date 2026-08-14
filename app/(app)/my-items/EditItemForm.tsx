@@ -78,14 +78,12 @@ export default function EditItemForm({
         onChange={() => setSaved(false)}
         className="commons-input text-sm"
       />
-      {item.image_url && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={item.image_url}
-          alt=""
-          className="h-24 w-24 rounded-md border-2 border-commons-ink object-cover"
-        />
-      )}
+{item.image_url && (
+  <div className="commons-shipwindow" style={{ maxWidth: "10rem" }}>
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img src={item.image_url} alt="" />
+  </div>
+)}
       <ImageFileInput name="image_file" label="Replace photo (optional)" />
       <div className="flex items-center gap-3">
         <button

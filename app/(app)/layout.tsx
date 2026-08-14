@@ -6,6 +6,7 @@ import { getCurrentMembership } from "@/lib/current-neighborhood";
 import StandaloneTracker from "./StandaloneTracker";
 import AddToHomeScreenBanner from "./AddToHomeScreenBanner";
 import NotificationsPromptBanner from "./NotificationsPromptBanner";
+import OceanWaves from "./OceanWaves";
 
 export default async function AppLayout({
   children,
@@ -35,20 +36,25 @@ const neighborhoodName = current.neighborhood?.name;
     <div className="min-h-screen pb-24">
         <StandaloneTracker />
   <AddToHomeScreenBanner />
-      <header className="flex items-center justify-between border-b-2 border-commons-ink bg-commons-teal px-5 py-3">
-        <span className="commons-heading text-3xl leading-none text-commons-cream">
-          {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
+<header className="relative overflow-hidden bg-commons-teal">
+  <div className="relative px-5 pb-3 pt-4 text-center">
+    <Link
+      href="/notifications"
+      className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-commons-cream"
+    >
+      🔔
+      {unreadCount != null && unreadCount > 0 && (
+        <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full border border-commons-ink bg-commons-brick font-mono text-[10px] font-bold text-commons-cream">
+          {unreadCount > 9 ? "9+" : unreadCount}
         </span>
-        <Link href="/notifications" className="relative text-2xl text-commons-cream">
-          🔔
-          {unreadCount != null && unreadCount > 0 && (
-            <span className="absolute -right-2 -top-2 flex h-5 w-5 items-center justify-center rounded-full border border-commons-ink bg-commons-brick font-mono text-[10px] font-bold text-commons-cream">
-              {unreadCount > 9 ? "9+" : unreadCount}
-            </span>
-          )}
-        </Link>
-        <NotificationsPromptBanner />
-      </header>
+      )}
+    </Link>
+    <span className="commons-heading block text-3xl leading-none text-commons-cream">
+      {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
+    </span>
+  </div>
+  <OceanWaves />
+</header>
 <main className="mx-auto w-full max-w-5xl px-4 py-6">{children}</main>
 
 <BottomNav isAdmin={isAdmin} />

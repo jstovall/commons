@@ -129,24 +129,22 @@ if (selectedFilter === "favorites" && favoriteIds.size === 0) {
                 </div>
 <form action={toggleFavorite}>
   <input type="hidden" name="item_id" value={item.id} />
-  <button
-    type="submit"
-    aria-label="Favorite"
-    className={`text-2xl ${isFavorited ? "text-commons-salmon" : "text-commons-ink/40"}`}
-  >
+ <button
+  type="submit"
+  aria-label="Favorite"
+  className={`text-2xl ${isFavorited ? "text-commons-brick" : "text-commons-ink/55"}`}
+>
     {isFavorited ? "♥" : "♡"}
   </button>
 </form>
               </div>
 
               {item.image_url && (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={item.image_url}
-                  alt={item.name}
-                  className="mt-2 h-40 w-full rounded-md border-2 border-commons-ink object-cover"
-                />
-              )}
+  <div className="commons-shipwindow mt-3">
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img src={item.image_url} alt={item.name} />
+  </div>
+)}
 
               {item.description && (
                 <p className="mt-2 text-sm">{item.description}</p>

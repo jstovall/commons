@@ -213,9 +213,9 @@ async function LendingView({
       <div className="mt-8 flex flex-col gap-8">
         {sortedGroups.map(([groupName, groupItems]) => (
           <div key={groupName}>
-            <h3 className="mb-3 border-b-2 border-dashed border-commons-ink/40 pb-1 font-mono text-sm font-bold uppercase tracking-wide">
-              {groupName}
-            </h3>
+           <h3 className="mb-3 border-b-2 border-commons-ink/60 pb-1 font-mono text-sm font-bold uppercase tracking-wide">
+  {groupName}
+</h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {groupItems?.map((item) => (
                 <div key={item.id} className="commons-card-flat p-3">

@@ -9,16 +9,17 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        commons: {
-          cream: "#EDE3C8",
-          ochre: "#D3A22C",
-          teal: "#4A8B8C",
-          brick: "#B5432F",
-          olive: "#5C6B3E",
-          salmon: "#E0917A",
-          ink: "#332B22",
-          card: "#F7F0DC",
-        },
+commons: {
+  page: "#DFDACB",
+  cream: "#EFE6CE",
+  card: "#F8F1DE",
+  ochre: "#D3A22C",
+  teal: "#7C97A3",
+  brick: "#C23B22",
+  olive: "#5C6B3E",
+  salmon: "#E8AF9A",
+  ink: "#332B22",
+},
       },
       fontFamily: {
         display: ["var(--font-display)"],

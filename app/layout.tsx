@@ -41,7 +41,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${caveat.variable} ${spaceGrotesk.variable} ${spaceMono.variable}`}>
-      <body className="min-h-screen bg-commons-cream font-body text-commons-ink antialiased">
+     <body className="min-h-screen bg-commons-page font-body text-commons-ink antialiased">
          <ServiceWorkerRegistration />
         {children}
       </body>
