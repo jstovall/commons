@@ -12,68 +12,6 @@ body {
   background-size: 14px 14px;
 }
 
-@layer components {
-  /* The wordmark / page headings */
-  .commons-heading {
-    font-family: var(--font-display);
-    color: theme("colors.commons.teal");
-    font-weight: 700;
-  }
-.commons-hairline {
-  border: none;
-  border-top: 1px solid rgba(51, 43, 34, 0.45);
-}
-
-.commons-hairline-double {
-  border: none;
-  border-top: 3px double rgba(51, 43, 34, 0.55);
-}
-
-.commons-shipwindow {
-  position: relative;
-  width: 100%;
-  aspect-ratio: 16 / 10;
-  overflow: hidden;
-  border: 4px solid theme("colors.commons.ink");
-  border-radius: 2.5rem / 4rem;
-  box-shadow:
-    inset 0 0 0 3px theme("colors.commons.cream"),
-    inset 0 0 0 6px theme("colors.commons.ink"),
-    2px 2px 0 rgba(51, 43, 34, 0.25);
-}
-.commons-shipwindow img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
-}
-
-.commons-card-flat {
-  background-color: theme("colors.commons.card");
-background-image:
-  repeating-linear-gradient(45deg, rgba(51,43,34,0.018) 0, rgba(51,43,34,0.018) 1px, transparent 1px, transparent 7px);
-  border: 2px solid theme("colors.commons.ink");
-  border-radius: 10px;
-  box-shadow: 3px 3px 0 rgba(51, 43, 34, 0.25);
-}
-
-  /* Scrapbook-cutout item/request card, hand-wobbly border, slight tilt */
-.commons-card {
-  background-color: theme("colors.commons.card");
-  background-image:
-    repeating-linear-gradient(45deg, rgba(51,43,34,0.018) 0, rgba(51,43,34,0.018) 1px, transparent 1px, transparent 7px);
-  border: 2px solid theme("colors.commons.ink");
-  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
-  box-shadow: 3px 3px 0 rgba(51, 43, 34, 0.25);
-  position: relative;
-  transform: rotate(var(--tilt, -0.5deg));
-}
-.commons-card:nth-child(3n + 2) {
-  --tilt: 0.5deg;
-}
-.commons-card:nth-child(3n + 3) {
-  --tilt: -0.25deg;
-}
 @layer base {
   input,
   select,
@@ -82,18 +20,83 @@ background-image:
     color: theme("colors.commons.ink");
   }
 }
+
+@layer components {
+  /* The wordmark / page headings */
+  .commons-heading {
+    font-family: var(--font-display);
+    color: theme("colors.commons.teal");
+    font-weight: 700;
+  }
+
+  .commons-hairline {
+    border: none;
+    border-top: 1px solid rgba(51, 43, 34, 0.45);
+  }
+
+  .commons-hairline-double {
+    border: none;
+    border-top: 3px double rgba(51, 43, 34, 0.55);
+  }
+
+  .commons-shipwindow {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 10;
+    overflow: hidden;
+    border: 4px solid theme("colors.commons.ink");
+    border-radius: 2.5rem / 4rem;
+    box-shadow:
+      inset 0 0 0 3px theme("colors.commons.cream"),
+      inset 0 0 0 6px theme("colors.commons.ink"),
+      2px 2px 0 rgba(51, 43, 34, 0.25);
+  }
+  .commons-shipwindow img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .commons-card-flat {
+    background-color: theme("colors.commons.card");
+    background-image:
+      repeating-linear-gradient(45deg, rgba(51,43,34,0.018) 0, rgba(51,43,34,0.018) 1px, transparent 1px, transparent 7px);
+    border: 2px solid theme("colors.commons.ink");
+    border-radius: 10px;
+    box-shadow: 3px 3px 0 rgba(51, 43, 34, 0.25);
+  }
+
+  /* Scrapbook-cutout item/request card, hand-wobbly border, slight tilt */
+  .commons-card {
+    background-color: theme("colors.commons.card");
+    background-image:
+      repeating-linear-gradient(45deg, rgba(51,43,34,0.018) 0, rgba(51,43,34,0.018) 1px, transparent 1px, transparent 7px);
+    border: 2px solid theme("colors.commons.ink");
+    border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+    box-shadow: 3px 3px 0 rgba(51, 43, 34, 0.25);
+    position: relative;
+    transform: rotate(var(--tilt, -0.5deg));
+  }
+  .commons-card:nth-child(3n + 2) {
+    --tilt: 0.5deg;
+  }
+  .commons-card:nth-child(3n + 3) {
+    --tilt: -0.25deg;
+  }
+
   /* Washi tape strip pinning the card down */
-.commons-tape {
-  position: absolute;
-  top: -10px;
-  left: 50%;
-  width: 70px;
-  height: 22px;
-  transform: translateX(-50%) rotate(-3deg);
-  background-color: theme("colors.commons.ochre");
-  opacity: 0.85;
-  box-shadow: 0 1px 2px rgba(51, 43, 34, 0.2);
-}
+  .commons-tape {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    width: 70px;
+    height: 22px;
+    transform: translateX(-50%) rotate(-3deg);
+    background-color: theme("colors.commons.ochre");
+    opacity: 0.85;
+    box-shadow: 0 1px 2px rgba(51, 43, 34, 0.2);
+  }
 
   /* Beveled, tactile button */
   .commons-button {
@@ -119,39 +122,39 @@ background-image:
     color: theme("colors.commons.cream");
   }
   .commons-button-salmon {
-  background-color: theme("colors.commons.salmon");
-}
+    background-color: theme("colors.commons.salmon");
+  }
 
   /* Rubber-stamp status/category label */
-.commons-stamp {
-  font-family: var(--font-mono);
-  font-size: 0.68rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  padding: 0.2rem 0.65rem;
-  background-color: theme("colors.commons.card");
-  color: theme("colors.commons.ink");
-  border: 1.5px solid theme("colors.commons.ink");
-  border-radius: 999px;
-  display: inline-block;
-  box-shadow: inset 0 0 0 2px theme("colors.commons.cream"), 1px 1px 0 rgba(51,43,34,0.2);
-}
-.commons-stamp-teal {
-  background-color: theme("colors.commons.teal");
-  color: theme("colors.commons.cream");
-  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.35), 1px 1px 0 rgba(51,43,34,0.25);
-}
-.commons-stamp-brick {
-  background-color: theme("colors.commons.brick");
-  color: theme("colors.commons.cream");
-  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.35), 1px 1px 0 rgba(51,43,34,0.25);
-}
-.commons-stamp-olive {
-  background-color: theme("colors.commons.olive");
-  color: theme("colors.commons.cream");
-  box-shadow: inset 0 0 0 2px rgba(255,255,255,0.35), 1px 1px 0 rgba(51,43,34,0.25);
-}
+  .commons-stamp {
+    font-family: var(--font-mono);
+    font-size: 0.68rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    padding: 0.2rem 0.65rem;
+    background-color: theme("colors.commons.card");
+    color: theme("colors.commons.ink");
+    border: 1.5px solid theme("colors.commons.ink");
+    border-radius: 999px;
+    display: inline-block;
+    box-shadow: inset 0 0 0 2px theme("colors.commons.cream"), 1px 1px 0 rgba(51,43,34,0.2);
+  }
+  .commons-stamp-teal {
+    background-color: theme("colors.commons.teal");
+    color: theme("colors.commons.cream");
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.35), 1px 1px 0 rgba(51,43,34,0.25);
+  }
+  .commons-stamp-brick {
+    background-color: theme("colors.commons.brick");
+    color: theme("colors.commons.cream");
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.35), 1px 1px 0 rgba(51,43,34,0.25);
+  }
+  .commons-stamp-olive {
+    background-color: theme("colors.commons.olive");
+    color: theme("colors.commons.cream");
+    box-shadow: inset 0 0 0 2px rgba(255,255,255,0.35), 1px 1px 0 rgba(51,43,34,0.25);
+  }
 
   /* Input fields — simple, tactile, not corporate-clean */
   .commons-input {
@@ -166,6 +169,8 @@ background-image:
     border-color: theme("colors.commons.teal");
   }
 }
+
+/* ---------- Ocean wave header animation (outside @layer: keyframes need to be top-level) ---------- */
 
 .ocean-container {
   width: 100%;
@@ -215,3 +220,29 @@ background-image:
     animation: none !important;
   }
 }
+
+/* ---------- Nav slide transitions ---------- */
+
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.22s;
+  animation-timing-function: ease-in-out;
+}
+
+html[data-transition-direction="forward"]::view-transition-old(root) {
+  animation-name: commons-slide-out-left;
+}
+html[data-transition-direction="forward"]::view-transition-new(root) {
+  animation-name: commons-slide-in-right;
+}
+html[data-transition-direction="back"]::view-transition-old(root) {
+  animation-name: commons-slide-out-right;
+}
+html[data-transition-direction="back"]::view-transition-new(root) {
+  animation-name: commons-slide-in-left;
+}
+
+@keyframes commons-slide-out-left { to { transform: translateX(-25%); opacity: 0; } }
+@keyframes commons-slide-in-right { from { transform: translateX(25%); opacity: 0; } }
+@keyframes commons-slide-out-right { to { transform: translateX(25%); opacity: 0; } }
+@keyframes commons-slide-in-left { from { transform: translateX(-25%); opacity: 0; } }

@@ -111,20 +111,18 @@ return (
           neighborhood you&apos;re joining.
         </p>
       )}
-
       <div className="commons-card-flat mt-6 p-5">
           <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-commons-ink/50">
-    Plate No. 1
   </p>
   <hr className="commons-hairline mb-3" />
         <h2 className="commons-heading mb-2 text-xl">Note about install &amp; verification</h2>
         <ul className="flex list-disc flex-col gap-2 pl-5 text-sm">
           <li>
             This app uses PWA for direct install (this is because it&apos;s so
-            local and radical, it&apos;s not even in any app store!)
+            local and radical, it&apos;s not even in any app stores!)
           </li>
           <li>
-            The email verification comes from Supabase (this is just the
+            The email verification comes from Supabase at the moment (this is just the
             database engine and its own authentication protocol — which is
             easier than setting up another integration for email).
           </li>
@@ -143,7 +141,6 @@ return (
 
       <div className="commons-card-flat mt-4 p-5">
           <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-commons-ink/50">
-    Plate No. 2
   </p>
   <hr className="commons-hairline mb-3" />
         <h2 className="commons-heading mb-2 text-xl">Expectations for use</h2>
@@ -187,7 +184,6 @@ return (
 
       <div className="commons-card-flat mt-4 p-5">
           <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-commons-ink/50">
-    Plate No. 3
   </p>
   <hr className="commons-hairline mb-3" />
         <h2 className="commons-heading mb-2 text-xl">
@@ -223,7 +219,6 @@ return (
 
       <div className="commons-card-flat mt-4 p-5">
           <p className="mb-1 font-mono text-[10px] uppercase tracking-widest text-commons-ink/50">
-    Plate No. 4
   </p>
   <hr className="commons-hairline mb-3" />
         <h2 className="commons-heading mb-2 text-xl">Accept and install</h2>
