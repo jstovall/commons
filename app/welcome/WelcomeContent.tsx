@@ -99,7 +99,7 @@ return (
     </header>
 
     <div className="mx-auto max-w-md px-6 py-8">
-      </div>      {badCode && (
+      {badCode && (
         <p className="mt-2 text-center font-mono text-xs text-commons-brick">
           That invite link doesn&apos;t match a neighborhood — double check
           it with whoever sent it.
@@ -295,6 +295,7 @@ return (
             )}
           </>
         )}
+        </div>
       </div>
     </main>
   );
