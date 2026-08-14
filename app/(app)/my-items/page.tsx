@@ -209,6 +209,7 @@ async function LendingView({
 
       <NewItemForm categories={categories ?? []} />
 
+
       <div className="mt-8 flex flex-col gap-8">
         {sortedGroups.map(([groupName, groupItems]) => (
           <div key={groupName}>
