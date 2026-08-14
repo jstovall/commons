@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import Crest from "@/app/Crest";
+import OceanWaves from "@/app/(app)/OceanWaves";
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -87,17 +87,19 @@ export default function WelcomeContent({
   // that's in flight, so there's no flash of onboarding content.
   if (!ready) return null;
 
-  return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col px-6 py-10">
-<div className="flex flex-col items-center">
-{/* eslint-disable-next-line @next/next/no-img-element */}
-<img src="/icons/icon-simple.png" alt="" className="h-14 w-14" />
-  <span className="commons-heading mt-2 text-4xl">
-    {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
-  </span>
-</div>
+return (
+  <main className="min-h-screen">
+    <header className="relative overflow-hidden bg-commons-teal">
+      <div className="px-6 pb-4 pt-8 text-center">
+        <span className="commons-heading block text-4xl leading-none text-commons-cream">
+          {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
+        </span>
+      </div>
+      <OceanWaves />
+    </header>
 
-      {badCode && (
+    <div className="mx-auto max-w-md px-6 py-8">
+      </div>      {badCode && (
         <p className="mt-2 text-center font-mono text-xs text-commons-brick">
           That invite link doesn&apos;t match a neighborhood — double check
           it with whoever sent it.
