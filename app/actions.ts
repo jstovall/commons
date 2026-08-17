@@ -561,6 +561,19 @@ export async function flagContent(formData: FormData) {
   revalidatePath("/loans", "layout");
 }
 
+export async function recordActivity() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return;
+
+  await supabase
+    .from("profiles")
+    .update({ last_active_at: new Date().toISOString() })
+    .eq("id", user.id);
+}
+
 export async function resolveReport(formData: FormData) {
   const { supabase, user } = await requireAdminMembership();
   const reportId = formData.get("report_id") as string;

@@ -15,7 +15,7 @@ const PLATFORM_ICON: Record<string, string> = {
   other: "💻",
 };
 
-const OPEN_LOAN_STATUSES = ["requested", "approved", "checked_out", "overdue"] as const;
+const OPEN_LOAN_STATUSES = ["requested", "approved", "checked_out"] as const;
 
 export default async function AdminMembersPage() {
   const supabase = await createClient();
@@ -34,15 +34,15 @@ export default async function AdminMembersPage() {
     .eq("id", myMembership.neighborhood_id)
     .maybeSingle();
 
-  const { data: members, error } = await supabase
-    .from("neighborhood_members")
-    .select(
-      `user_id, role, joined_at,
-       profile:profiles(display_name, platform, last_standalone_at)`
-    )
-    .eq("neighborhood_id", myMembership.neighborhood_id)
-    .eq("status", "active")
-    .order("joined_at", { ascending: true });
+const { data: members, error } = await supabase
+  .from("neighborhood_members")
+  .select(
+    `user_id, role, joined_at,
+     profile:profiles(display_name, platform, last_standalone_at, last_active_at)`
+  )
+  .eq("neighborhood_id", myMembership.neighborhood_id)
+  .eq("status", "active")
+  .order("joined_at", { ascending: true });
   if (error) console.error("Admin members query error:", error);
 
   const { data: notifStatus, error: notifError } = await supabase.rpc(
@@ -80,14 +80,7 @@ export default async function AdminMembersPage() {
     lendingCountMap.set(loan.owner_id, (lendingCountMap.get(loan.owner_id) ?? 0) + 1);
   }
 
-  const { data: lastLogins, error: loginsError } = await supabase.rpc(
-    "get_last_sign_ins",
-    { _neighborhood_id: myMembership.neighborhood_id }
-  );
-  if (loginsError) console.error("Last logins query error:", loginsError);
-  const lastLoginMap = new Map(
-    (lastLogins ?? []).map((l) => [l.user_id, l.last_sign_in_at])
-  );
+
 
   return (
     <div>
@@ -121,7 +114,7 @@ export default async function AdminMembersPage() {
           const itemCount = itemCountMap.get(m.user_id) ?? 0;
           const borrowingCount = borrowingCountMap.get(m.user_id) ?? 0;
           const lendingCount = lendingCountMap.get(m.user_id) ?? 0;
-          const lastLogin = lastLoginMap.get(m.user_id) ?? null;
+          const lastActive = m.profile?.last_active_at ?? null;
 
           return (
             <div key={m.user_id} className="commons-card-flat p-3">
@@ -138,7 +131,7 @@ export default async function AdminMembersPage() {
                 <span title="Currently borrowing / currently lending out">
                  ({borrowingCount} borrow · {lendingCount} lending)
                 </span>
-                <span title="Last login"> 🕓 {lastLogin ? formatDate(lastLogin) : "never"} </span>
+                <span title="Last active in the app">🕓 {lastActive ? formatDate(lastActive) : "never"}</span>
                 {installed && (
                   <span title="Installed platform">
                     {PLATFORM_ICON[m.profile?.platform ?? "other"]}
