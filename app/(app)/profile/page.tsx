@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
 import { updateProfile, signOutAction, switchNeighborhood } from "@/app/actions";
 import NotificationsToggle from "./NotificationsToggle";
+import ShareInviteLink from "./ShareInviteLink";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -18,6 +19,14 @@ export default async function ProfilePage() {
     .maybeSingle();
 
 const { memberships, current } = await getCurrentMembership(user.id);
+
+const { data: currentNeighborhood } = current
+  ? await supabase
+      .from("neighborhoods")
+      .select("invite_code")
+      .eq("id", current.neighborhood_id)
+      .maybeSingle()
+  : { data: null };
 
   const initials = (profile?.display_name ?? "?")
     .split(" ")
@@ -96,6 +105,12 @@ const { memberships, current } = await getCurrentMembership(user.id);
       })}
     </div>
   </div>
+)}
+{current && currentNeighborhood?.invite_code && (
+  <ShareInviteLink
+    code={currentNeighborhood.invite_code}
+    neighborhoodName={current.neighborhood?.name ?? null}
+  />
 )}
 <NotificationsToggle />
 <a
