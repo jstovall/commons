@@ -11,13 +11,17 @@ const statusStampClass: Record<string, string> = {
   unavailable: "commons-stamp",
 };
 
-
 export default async function BrowsePage({
   searchParams,
 }: {
-  searchParams: Promise<{ q?: string; category?: string; filter?: string }>;
+  searchParams: Promise<{
+    q?: string;
+    category?: string;
+    filter?: string;
+    item?: string;
+  }>;
 }) {
-  const { q, category, filter } = await searchParams;
+  const { q, category, filter, item: itemParam } = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -27,62 +31,79 @@ export default async function BrowsePage({
   const { current: membership } = await getCurrentMembership(user.id);
   if (!membership) redirect("/join");
 
+  const isAdmin = membership.role === "admin" || membership.role === "moderator";
+
   const { data: categories } = await supabase
     .from("categories")
     .select("id, name")
     .order("name");
 
-  // Favorites are needed up front — both for the heart icons and to build
-  // the "My Favorites" filter condition below.
- const { data: favorites } = await supabase
-  .from("favorites")
-  .select("item_id")
-  .eq("user_id", user.id);
-const favoriteIds = new Set(
-  ((favorites ?? []) as { item_id: string }[]).map((f) => f.item_id)
-);
+  const { data: favorites } = await supabase
+    .from("favorites")
+    .select("item_id")
+    .eq("user_id", user.id);
+  const favoriteIds = new Set(
+    ((favorites ?? []) as { item_id: string }[]).map((f) => f.item_id)
+  );
 
-const selectedFilter = filter ?? "available";
+  const selectedFilter = filter ?? "available";
 
-let items: any[] | null = [];
-let itemsError: any = null;
+  let items: any[] | null = [];
+  let itemsError: any = null;
 
-if (selectedFilter === "favorites" && favoriteIds.size === 0) {
-  // Nothing to query — avoid an .in() with an empty list.
-  items = [];
-} else {
-  let query = supabase
-    .from("items")
-.select(
-  `id, name, description, image_url, status, created_at, owner_id,
-   category:categories(name),
-   owner:profiles!items_owner_id_fkey(display_name)`
-)
-    .eq("is_active", true)
-    .eq("content_flag", false)
-    .eq("neighborhood_id", membership.neighborhood_id)
-    .order("created_at", { ascending: false });
+  if (itemParam) {
+    let query = supabase
+      .from("items")
+      .select(
+        `id, name, description, image_url, status, content_flag, created_at, owner_id,
+         category:categories(name),
+         owner:profiles!items_owner_id_fkey(display_name)`
+      )
+      .eq("id", itemParam)
+      .eq("neighborhood_id", membership.neighborhood_id);
 
-  if (q) {
-    const safe = q.replace(/[,()]/g, " ").trim();
-    if (safe) query = query.or(`name.ilike.%${safe}%,description.ilike.%${safe}%`);
+    if (!isAdmin) {
+      query = query.eq("content_flag", false).eq("is_active", true);
+    }
+
+    const result = await query.maybeSingle();
+    items = result.data ? [result.data] : [];
+    itemsError = result.error;
+  } else if (selectedFilter === "favorites" && favoriteIds.size === 0) {
+    items = [];
+  } else {
+    let query = supabase
+      .from("items")
+      .select(
+        `id, name, description, image_url, status, content_flag, created_at, owner_id,
+         category:categories(name),
+         owner:profiles!items_owner_id_fkey(display_name)`
+      )
+      .eq("is_active", true)
+      .eq("content_flag", false)
+      .eq("neighborhood_id", membership.neighborhood_id)
+      .order("created_at", { ascending: false });
+
+    if (q) {
+      const safe = q.replace(/[,()]/g, " ").trim();
+      if (safe) query = query.or(`name.ilike.%${safe}%,description.ilike.%${safe}%`);
+    }
+    if (category) query = query.eq("category_id", category);
+
+    if (selectedFilter === "available") {
+      query = query.eq("status", "available").neq("owner_id", user.id);
+    } else if (selectedFilter === "checked_out") {
+      query = query.in("status", ["checked_out", "requested"]).neq("owner_id", user.id);
+    } else if (selectedFilter === "my_items") {
+      query = query.eq("owner_id", user.id);
+    } else if (selectedFilter === "favorites") {
+      query = query.in("id", Array.from(favoriteIds));
+    }
+
+    const result = await query;
+    items = result.data;
+    itemsError = result.error;
   }
-  if (category) query = query.eq("category_id", category);
-
-  if (selectedFilter === "available") {
-    query = query.eq("status", "available").neq("owner_id", user.id);
-  } else if (selectedFilter === "checked_out") {
-    query = query.in("status", ["checked_out", "requested"]).neq("owner_id", user.id);
-  } else if (selectedFilter === "my_items") {
-    query = query.eq("owner_id", user.id);
-  } else if (selectedFilter === "favorites") {
-    query = query.in("id", Array.from(favoriteIds));
-  }
-
-  const result = await query;
-  items = result.data;
-  itemsError = result.error;
-}
 
   if (itemsError) console.error("Browse query error:", itemsError);
 
@@ -101,12 +122,26 @@ if (selectedFilter === "favorites" && favoriteIds.size === 0) {
     <div>
       <h2 className="commons-heading mb-4 text-3xl">Available to borrow</h2>
 
-<SearchBar
-  initialQuery={q ?? ""}
-  initialCategory={category ?? ""}
-  initialFilter={selectedFilter}
-  categories={categories ?? []}
-/>
+      {itemParam && items?.[0]?.content_flag && (
+        <p className="mb-4 font-mono text-xs text-commons-brick">
+          Viewing flagged content — normally hidden from Browse.
+        </p>
+      )}
+
+      {!itemParam && (
+        <SearchBar
+          initialQuery={q ?? ""}
+          initialCategory={category ?? ""}
+          initialFilter={selectedFilter}
+          categories={categories ?? []}
+        />
+      )}
+
+      {itemParam && (
+        <a href="/browse" className="mb-4 inline-block font-mono text-xs font-bold underline">
+          ← back to Browse
+        </a>
+      )}
 
       <div className="grid grid-cols-1 gap-8 sm:grid-cols-2 lg:grid-cols-3">
         {items?.map((item) => {
@@ -127,24 +162,26 @@ if (selectedFilter === "favorites" && favoriteIds.size === 0) {
                     shared by {item.owner?.display_name}
                   </p>
                 </div>
-<form action={toggleFavorite}>
-  <input type="hidden" name="item_id" value={item.id} />
- <button
-  type="submit"
-  aria-label="Favorite"
-  className={`text-2xl ${isFavorited ? "text-commons-brick" : "text-commons-ink/55"}`}
->
-    {isFavorited ? "♥" : "♡"}
-  </button>
-</form>
+                <form action={toggleFavorite}>
+                  <input type="hidden" name="item_id" value={item.id} />
+                  <button
+                    type="submit"
+                    aria-label="Favorite"
+                    className={`text-2xl ${
+                      isFavorited ? "text-commons-brick" : "text-commons-ink/55"
+                    }`}
+                  >
+                    {isFavorited ? "♥" : "♡"}
+                  </button>
+                </form>
               </div>
 
               {item.image_url && (
-  <div className="commons-shipwindow mt-3">
-    {/* eslint-disable-next-line @next/next/no-img-element */}
-    <img src={item.image_url} alt={item.name} />
-  </div>
-)}
+                <div className="commons-shipwindow mt-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.image_url} alt={item.name} />
+                </div>
+              )}
 
               {item.description && (
                 <p className="mt-2 text-sm">{item.description}</p>
@@ -206,15 +243,15 @@ if (selectedFilter === "favorites" && favoriteIds.size === 0) {
                   </a>
                 </div>
               )}
-
-
             </div>
           );
         })}
 
-{items?.length === 0 && (
-  <p className="font-mono text-sm">No items match your search yet.</p>
-)}
+        {items?.length === 0 && (
+          <p className="font-mono text-sm">
+            {itemParam ? "That item couldn't be found." : "No items match your search yet."}
+          </p>
+        )}
       </div>
     </div>
   );

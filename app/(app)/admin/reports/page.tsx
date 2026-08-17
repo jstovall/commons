@@ -38,7 +38,7 @@ for (const r of reports ?? []) {
     details[r.id] = {
       text: data ? `${data.name} — ${data.description ?? ""}` : "(item not found)",
       authorName: data?.owner?.display_name ?? "unknown",
-      contextUrl: "/browse",
+      contextUrl: `/browse?item=${r.target_id}`,
     };
   
   } else if (r.target_type === "loan_message") {
@@ -61,19 +61,19 @@ for (const r of reports ?? []) {
     details[r.id] = {
       text: data ? `${data.title} — ${data.description ?? ""}` : "(ask not found)",
       authorName: data?.requester?.display_name ?? "unknown",
-      contextUrl: "/asks",
+      contextUrl: `/asks?ask=${r.target_id}`,
     };
-  } else if (r.target_type === "item_request_response") {
-    const { data } = await supabase
-      .from("item_request_responses")
-      .select("message, responder:profiles(display_name)")
-      .eq("id", r.target_id)
-      .maybeSingle();
-    details[r.id] = {
-      text: data?.message ?? "(reply not found)",
-      authorName: data?.responder?.display_name ?? "unknown",
-      contextUrl: "/asks",
-    };
+} else if (r.target_type === "item_request_response") {
+  const { data } = await supabase
+    .from("item_request_responses")
+    .select("message, request_id, responder:profiles(display_name)")
+    .eq("id", r.target_id)
+    .maybeSingle();
+  details[r.id] = {
+    text: data?.message ?? "(reply not found)",
+    authorName: data?.responder?.display_name ?? "unknown",
+    contextUrl: data?.request_id ? `/asks?ask=${data.request_id}` : null,
+  };
   } else {
     details[r.id] = { text: "(unknown content)", authorName: "unknown", contextUrl: null };
   }
