@@ -8,15 +8,17 @@ export default function RefreshOnFocus() {
   const router = useRouter();
 
   useEffect(() => {
-  function handleVisibilityChange() {
-  if (document.visibilityState === "visible") {
-    router.refresh();
     recordActivity();
+  }, []);
+
+  useEffect(() => {
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") {
+        router.refresh();
+        recordActivity();
+      }
     }
-  }
-useEffect(() => {
-  recordActivity();
-}, []);
+
     document.addEventListener("visibilitychange", handleVisibilityChange);
     window.addEventListener("focus", handleVisibilityChange);
 
