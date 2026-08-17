@@ -8,6 +8,7 @@ import AddToHomeScreenBanner from "./AddToHomeScreenBanner";
 import NotificationsPromptBanner from "./NotificationsPromptBanner";
 import OceanWaves from "./OceanWaves";
 import RefreshOnFocus from "./RefreshOnFocus";
+import ViewportFix from "./ViewportFix";
 
 export default async function AppLayout({
   children,
@@ -57,6 +58,7 @@ const neighborhoodName = current.neighborhood?.name;
   </div>
   <OceanWaves />
   <RefreshOnFocus />
+  <ViewportFix />
 </header>
 <main className="mx-auto w-full max-w-5xl px-4 py-6">{children}</main>
 
