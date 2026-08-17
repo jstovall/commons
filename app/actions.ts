@@ -95,13 +95,13 @@ export async function savePushSubscription(subscription: {
   if (error) throw new Error(error.message);
 }
 
-export async function deletePushSubscription(endpoint: string) {
+export async function deletePushSubscription() {
   const { supabase, user } = await requireActiveMembership();
-  await supabase
+  const { error } = await supabase
     .from("push_subscriptions")
     .delete()
-    .eq("endpoint", endpoint)
     .eq("user_id", user.id);
+  if (error) throw new Error(error.message);
 }
 
 export async function recordStandaloneVisit(platform: "ios" | "android" | "other") {

@@ -47,13 +47,24 @@ async function handleEnable() {
 async function handleDisable() {
   setLoading(true);
   try {
-    const reg = await navigator.serviceWorker.ready;
-    const sub = await reg.pushManager.getSubscription();
-    if (sub) await deletePushSubscription(sub.endpoint);
-    await unsubscribeFromPush();
+    // Delete server-side first — this is the source of truth. Do it
+    // regardless of whether the browser can locate a local subscription
+    // object, since that lookup can silently fail after a service worker
+    // update, reinstall, or browser restart.
+    await deletePushSubscription();
     setSubscribed(false);
   } catch (err) {
     console.error("Push unsubscribe failed:", err);
+    setLoading(false);
+    return;
+  }
+
+  // Best-effort local cleanup — failing here shouldn't undo the fact that
+  // the server-side subscription was genuinely removed.
+  try {
+    await unsubscribeFromPush();
+  } catch (err) {
+    console.error("Local unsubscribe cleanup failed (non-fatal):", err);
   }
   setLoading(false);
 }
