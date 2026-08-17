@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import RefreshOnFocus from "./RefreshOnFocus";
 
 const DISMISS_KEY = "commons_a2hs_dismissed_until";
 const COOLDOWN_DAYS = 14;
@@ -68,3 +69,4 @@ export default function AddToHomeScreenBanner() {
     </div>
   );
 }
+<RefreshOnFocus />

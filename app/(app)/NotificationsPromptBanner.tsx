@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { subscribeToPush } from "@/lib/push";
 import { savePushSubscription } from "@/app/actions";
+import RefreshOnFocus from "./RefreshOnFocus";
 
 const DISMISS_KEY = "commons_notif_prompt_dismissed_until";
 const COOLDOWN_DAYS = 14;
@@ -90,3 +91,4 @@ export default function NotificationsPromptBanner() {
     </div>
   );
 }
+<RefreshOnFocus />

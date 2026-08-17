@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import { recordStandaloneVisit } from "@/app/actions";
+import RefreshOnFocus from "./RefreshOnFocus";
 
 export default function StandaloneTracker() {
   useEffect(() => {
@@ -25,3 +26,4 @@ export default function StandaloneTracker() {
 
   return null;
 }
+<RefreshOnFocus />

@@ -7,6 +7,7 @@ import StandaloneTracker from "./StandaloneTracker";
 import AddToHomeScreenBanner from "./AddToHomeScreenBanner";
 import NotificationsPromptBanner from "./NotificationsPromptBanner";
 import OceanWaves from "./OceanWaves";
+import RefreshOnFocus from "./RefreshOnFocus";
 
 export default async function AppLayout({
   children,
@@ -36,6 +37,7 @@ const neighborhoodName = current.neighborhood?.name;
     <div className="min-h-screen pb-24">
         <StandaloneTracker />
   <AddToHomeScreenBanner />
+  <NotificationsPromptBanner />
 <header className="relative overflow-hidden bg-commons-teal">
   <div className="relative px-5 pb-3 pt-4 text-center">
     <Link
@@ -54,6 +56,7 @@ const neighborhoodName = current.neighborhood?.name;
     </span>
   </div>
   <OceanWaves />
+  <RefreshOnFocus />
 </header>
 <main className="mx-auto w-full max-w-5xl px-4 py-6">{children}</main>
 
