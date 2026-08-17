@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { subscribeToPush } from "@/lib/push";
 import { savePushSubscription } from "@/app/actions";
-import RefreshOnFocus from "./RefreshOnFocus";
 
 const DISMISS_KEY = "commons_notif_prompt_dismissed_until";
 const COOLDOWN_DAYS = 14;
@@ -11,6 +10,7 @@ const COOLDOWN_DAYS = 14;
 export default function NotificationsPromptBanner() {
   const [visible, setVisible] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [isReenable, setIsReenable] = useState(false);
 
   useEffect(() => {
     async function check() {
@@ -27,8 +27,10 @@ export default function NotificationsPromptBanner() {
       // AddToHomeScreenBanner already covers getting them there first.
       if (isIOS && !isStandalone) return;
 
-      // Already decided (granted or denied) — nothing to prompt.
-      if (Notification.permission !== "default") return;
+      // Explicitly denied at the OS level — no way for JS to re-prompt this,
+      // only the person's own phone Settings can undo it. Nagging here
+      // would just be noise with no possible action behind it.
+      if (Notification.permission === "denied") return;
 
       const dismissedUntil = Number(localStorage.getItem(DISMISS_KEY) ?? 0);
       if (Date.now() < dismissedUntil) return;
@@ -37,6 +39,10 @@ export default function NotificationsPromptBanner() {
       const existingSub = await reg.pushManager.getSubscription();
       if (existingSub) return;
 
+      // Permission is granted but there's no active subscription — this is
+      // the "disabled from Profile" case. Re-subscribing here won't show a
+      // new OS prompt (permission's already decided), it'll just work.
+      setIsReenable(Notification.permission === "granted");
       setVisible(true);
     }
     check();
@@ -58,7 +64,6 @@ export default function NotificationsPromptBanner() {
       setVisible(false);
     } catch (err) {
       console.error("Push subscribe failed:", err);
-      // Permission was likely denied — don't keep asking every visit.
       handleDismiss();
     }
     setLoading(false);
@@ -69,8 +74,10 @@ export default function NotificationsPromptBanner() {
   return (
     <div className="mx-4 mt-4 flex items-start justify-between gap-3 rounded-lg border-2 border-commons-ink bg-commons-teal px-3 py-2 text-commons-cream">
       <p className="text-sm">
-        <strong>Turn on notifications </strong> so you don&apos;t miss borrow
-        requests, messages, or replies.
+        <strong>
+          {isReenable ? "Turn notifications back on" : "Turn on notifications"}
+        </strong>{" "}
+        so you don&apos;t miss borrow requests, messages, or replies.
       </p>
       <div className="flex shrink-0 gap-2">
         <button
@@ -91,4 +98,3 @@ export default function NotificationsPromptBanner() {
     </div>
   );
 }
-<RefreshOnFocus />
