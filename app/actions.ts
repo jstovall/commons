@@ -564,7 +564,11 @@ export async function flagContent(formData: FormData) {
 export async function resolveReport(formData: FormData) {
   const { supabase, user } = await requireAdminMembership();
   const reportId = formData.get("report_id") as string;
-  const targetType = formData.get("target_type") as string;
+  const targetType = formData.get("target_type") as
+  | "item"
+  | "loan_message"
+  | "item_request"
+  | "item_request_response";
   const targetId = formData.get("target_id") as string;
   const action = formData.get("action") as "dismiss" | "hide";
 
@@ -615,15 +619,23 @@ export async function resolveReport(formData: FormData) {
     
   }
 
-  const { error } = await supabase
-    .from("reports")
-    .update({
-      status: action === "hide" ? "resolved" : "dismissed",
-      reviewed_by: user.id,
-      reviewed_at: new Date().toISOString(),
-    })
-    .eq("id", reportId);
-  if (error) throw new Error(error.message);
+let updateQuery = supabase.from("reports").update({
+  status: action === "hide" ? "resolved" : "dismissed",
+  reviewed_by: user.id,
+  reviewed_at: new Date().toISOString(),
+});
+
+if (action === "hide") {
+  updateQuery = updateQuery
+    .eq("target_type", targetType)
+    .eq("target_id", targetId)
+    .eq("status", "open");
+} else {
+  updateQuery = updateQuery.eq("id", reportId);
+}
+
+const { error } = await updateQuery;
+if (error) throw new Error(error.message);
 
   if (action === "hide" && contentOwnerId && report) {
     const { data: existingThread } = await supabase
