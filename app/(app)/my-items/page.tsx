@@ -217,17 +217,26 @@ async function LendingView({
   {groupName}
 </h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {groupItems?.map((item) => (
-                <div key={item.id} className="commons-card-flat p-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-sm font-bold">{item.name}</h3>
-                    <span className={itemStatusStamp[item.status] ?? "commons-stamp"}>
-                      {item.status.replace("_", " ")}
-                    </span>
-                  </div>
-                  <EditItemForm item={item} categories={categories ?? []} />
-                </div>
-              ))}
+{groupItems?.map((item) => (
+  <div key={item.id} className="commons-card-flat p-3">
+    <div className="grid grid-cols-[1fr_auto] gap-3">
+<div>
+  <h3 className="text-sm font-bold">{item.name}</h3>
+  <span className={`${itemStatusStamp[item.status] ?? "commons-stamp"} mt-1 inline-block`}>
+    {item.status.replace("_", " ")}
+  </span>
+  <EditItemForm item={item} categories={categories ?? []} />
+</div>
+
+      {item.image_url && (
+        <div className="commons-shipwindow" style={{ width: "7rem" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={item.image_url} alt="" />
+        </div>
+      )}
+    </div>
+  </div>
+))}
             </div>
           </div>
         ))}
