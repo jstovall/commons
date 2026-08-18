@@ -27,12 +27,13 @@ export default function OceanWaves() {
 
   return (
     <div className="ocean-container">
-      <svg
-        className="ocean-svg"
-        xmlns="http://www.w3.org/2000/svg"
-        viewBox="0 0 1200 50"
-        preserveAspectRatio="none"
-      >
+<svg
+  ref={svgRef}
+  className="ocean-svg"
+  xmlns="http://www.w3.org/2000/svg"
+  viewBox="0 0 1200 50"
+  preserveAspectRatio="none"
+>
         <defs>
           <path id="ocean-wave-1" d="M0,15 C90,-5 140,25 230,10 C320,-5 360,30 470,10 C540,0 570,20 600,15 C700,-5 740,25 830,10 C920,-5 960,30 1070,10 C1140,0 1170,20 1200,15 V100 H0 Z" />
           <path id="ocean-wave-2" d="M0,28 C80,10 120,38 210,18 C280,2 330,40 420,15 C490,2 530,35 600,28 C680,10 720,38 810,18 C880,2 930,40 1020,15 C1090,2 1130,35 1200,28 V100 H0 Z" />

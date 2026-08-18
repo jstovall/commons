@@ -13,7 +13,10 @@ self.addEventListener("activate", (event) => {
 // asset caching yet; that's a future enhancement if it becomes valuable.
 self.addEventListener("fetch", (event) => {
   event.respondWith(
-    fetch(event.request).catch(() => caches.match(event.request))
+    fetch(event.request).catch(async () => {
+      const cached = await caches.match(event.request);
+      return cached || new Response("Offline", { status: 503, statusText: "Offline" });
+    })
   );
 });
 
