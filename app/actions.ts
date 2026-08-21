@@ -321,7 +321,7 @@ export async function updateItem(formData: FormData) {
 export async function respondToGiveawayRequest(formData: FormData) {
   const { supabase, user } = await requireActiveMembership();
   const threadId = formData.get("thread_id") as string;
-  const action = formData.get("action") as "approve" | "deny";
+  const action = formData.get("action") as "approve" | "decline";
 
   const { data: thread } = await supabase
     .from("giveaway_threads")
@@ -483,7 +483,7 @@ export async function respondToLoan(formData: FormData) {
   const loanId = formData.get("loan_id") as string;
   const action = formData.get("action") as
     | "approve"
-    | "deny"
+    | "decline"
     | "checkout"
     | "return"
     | "cancel";
@@ -502,7 +502,7 @@ export async function respondToLoan(formData: FormData) {
   } else {
     const statusMap: Record<string, LoanUpdate> = {
       approve: { status: "approved", approved_at: new Date().toISOString() },
-      deny: { status: "denied" },
+      decline: { status: "declined" },
       return: { status: "returned", returned_at: new Date().toISOString() },
       cancel: { status: "cancelled" },
     };

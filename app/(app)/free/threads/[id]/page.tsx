@@ -59,8 +59,8 @@ export default async function GiveawayThreadPage({
     </form>
     <form action={respondToGiveawayRequest}>
       <input type="hidden" name="thread_id" value={thread.id} />
-      <input type="hidden" name="action" value="deny" />
-      <button className="commons-button commons-button-danger text-xs">Deny</button>
+      <input type="hidden" name="action" value="decline" />
+      <button className="commons-button commons-button-danger text-xs">Decline</button>
     </form>
   </div>
 )}

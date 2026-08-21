@@ -102,9 +102,9 @@ export default async function LoanDetailPage({
                 </form>
                 <form action={respondToLoan}>
                   <input type="hidden" name="loan_id" value={loan.id} />
-                  <input type="hidden" name="action" value="deny" />
+                  <input type="hidden" name="action" value="decline" />
                   <button className="commons-button commons-button-danger text-xs">
-                    Deny
+                    Decline
                   </button>
                 </form>
               </>

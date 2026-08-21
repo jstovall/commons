@@ -43,16 +43,21 @@ export default async function FreePage() {
   if (itemsError) console.error("Giveaway items query error:", itemsError);
 
   const itemIds = (giveawayItems ?? []).map((i) => i.id);
-  const { data: threads } = itemIds.length
-    ? await supabase.from("giveaway_threads").select("id, item_id, requester_id").in("item_id", itemIds)
-    : { data: [] };
+const { data: threads } = itemIds.length
+  ? await supabase
+      .from("giveaway_threads")
+      .select("id, item_id, requester_id, status")
+      .in("item_id", itemIds)
+  : { data: [] };
 
-  const threadCountByItem = new Map<string, number>();
-  const myThreadByItem = new Map<string, string>();
-  for (const t of threads ?? []) {
+const threadCountByItem = new Map<string, number>();
+const myThreadByItem = new Map<string, string>();
+for (const t of threads ?? []) {
+  if (t.status === "pending") {
     threadCountByItem.set(t.item_id, (threadCountByItem.get(t.item_id) ?? 0) + 1);
-    if (t.requester_id === user.id) myThreadByItem.set(t.item_id, t.id);
   }
+  if (t.requester_id === user.id) myThreadByItem.set(t.item_id, t.id);
+}
 
   const activePiles = (piles ?? []).filter((p) => p.status !== "gone");
   const gonePiles = (piles ?? []).filter((p) => p.status === "gone");

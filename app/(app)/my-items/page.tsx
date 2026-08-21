@@ -15,7 +15,7 @@ const loanStatusStamp: Record<string, string> = {
   approved: "commons-stamp commons-stamp-teal",
   checked_out: "commons-stamp commons-stamp-brick",
   returned: "commons-stamp commons-stamp-olive",
-  denied: "commons-stamp",
+  declined: "commons-stamp",
   cancelled: "commons-stamp",
   overdue: "commons-stamp commons-stamp-brick",
 };
@@ -163,9 +163,9 @@ async function LendingView({
                       </form>
                       <form action={respondToLoan}>
                         <input type="hidden" name="loan_id" value={loan.id} />
-                        <input type="hidden" name="action" value="deny" />
+                        <input type="hidden" name="action" value="decline" />
                         <button className="commons-button commons-button-danger text-xs">
-                          Deny
+                          Decline
                         </button>
                       </form>
                     </>
