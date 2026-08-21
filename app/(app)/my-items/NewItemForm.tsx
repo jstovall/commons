@@ -36,30 +36,31 @@ export default function NewItemForm({
   onToggle={(e) => setOpen(e.currentTarget.open)}
   className="commons-card-flat p-4"
 >
-      <summary className="cursor-pointer font-mono text-sm font-bold">
-        + post a new item
-      </summary>
-      <label className="flex items-center gap-2 text-sm">
+<summary className="cursor-pointer font-mono text-sm font-bold">
+  + post a new item
+</summary>
+<form
+  ref={formRef}
+  onSubmit={handleSubmit}
+  className="mt-3 flex flex-col gap-3"
+>
+  <label className="flex items-center gap-2 text-sm">
+    <input
+      type="checkbox"
+      name="listing_type"
+      value="giveaway"
+      defaultChecked={defaultListingType === "giveaway"}
+      className="h-4 w-4 border-2 border-commons-ink"
+    />
+    Giving away (not a loan)
+  </label>
   <input
-    type="checkbox"
-    name="listing_type"
-    value="giveaway"
-    defaultChecked={defaultListingType === "giveaway"}
-    className="h-4 w-4 border-2 border-commons-ink"
+    name="name"
+    required
+    placeholder="Item name"
+    className="commons-input text-sm"
   />
-  Giving away (not a loan)
-</label>
-      <form
-        ref={formRef}
-        onSubmit={handleSubmit}
-        className="mt-3 flex flex-col gap-3"
-      >
-        <input
-          name="name"
-          required
-          placeholder="Item name"
-          className="commons-input text-sm"
-        />
+
         <select name="category_id" className="commons-input text-sm">
           <option value="">Choose a category</option>
           {categories.map((c) => (

@@ -263,7 +263,7 @@ export async function createItem(formData: FormData) {
 
   const listingType = formData.get("listing_type") === "giveaway" ? "giveaway" : "loan";
 
-const { error } = await supabase.from("items").insert({
+  const { error } = await supabase.from("items").insert({
   id: itemId,
   neighborhood_id: membership.neighborhood_id,
   owner_id: user.id,
@@ -299,6 +299,8 @@ export async function updateItem(formData: FormData) {
     imageUrl = publicUrlData.publicUrl;
   }
 
+  const listingType = formData.get("listing_type") === "giveaway" ? "giveaway" : "loan";
+
   const { error } = await supabase
     .from("items")
     .update({
@@ -306,12 +308,14 @@ export async function updateItem(formData: FormData) {
       description: (formData.get("description") as string) || null,
       image_url: imageUrl,
       category_id: (formData.get("category_id") as string) || null,
+      listing_type: listingType,
     })
     .eq("id", itemId);
 
   if (error) throw new Error(error.message);
   revalidatePath("/my-items");
   revalidatePath("/browse", "page");
+  revalidatePath("/free", "page");
 }
 
 export async function deleteItem(formData: FormData) {
