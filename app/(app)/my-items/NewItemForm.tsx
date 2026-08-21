@@ -4,10 +4,14 @@ import { useRef, useState, useTransition } from "react";
 import { createItem } from "@/app/actions";
 import ImageFileInput from "./ImageFileInput";
 
+
+
 export default function NewItemForm({
   categories,
+  defaultListingType = "loan",
 }: {
   categories: { id: string; name: string }[];
+  defaultListingType?: "loan" | "giveaway";
 }) {
   const [open, setOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
@@ -35,6 +39,16 @@ export default function NewItemForm({
       <summary className="cursor-pointer font-mono text-sm font-bold">
         + post a new item
       </summary>
+      <label className="flex items-center gap-2 text-sm">
+  <input
+    type="checkbox"
+    name="listing_type"
+    value="giveaway"
+    defaultChecked={defaultListingType === "giveaway"}
+    className="h-4 w-4 border-2 border-commons-ink"
+  />
+  Giving away (not a loan)
+</label>
       <form
         ref={formRef}
         onSubmit={handleSubmit}

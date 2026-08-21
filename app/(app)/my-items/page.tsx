@@ -25,7 +25,7 @@ export default async function MyItemsPage({
   searchParams: Promise<{ view?: string }>;
 }) {
   const { view } = await searchParams;
-  const activeView = view === "borrowing" ? "borrowing" : "lending";
+  const activeView = view === "borrowing" ? "borrowing" : view === "giveaway" ? "giveaway" : "lending";
 
   const supabase = await createClient();
   const {
@@ -52,13 +52,18 @@ export default async function MyItemsPage({
         <a href="/my-items?view=lending" className={tabClass("lending")}>
           Lending
         </a>
+      <a href="/my-items?view=giveaway" className={tabClass("giveaway")}>
+        Giving Away
+      </a>
       </div>
 
       {activeView === "lending" ? (
-        <LendingView userId={user.id} neighborhoodId={membership.neighborhood_id} />
-      ) : (
-        <BorrowingView userId={user.id} neighborhoodId={membership.neighborhood_id} />
-      )}
+  <LendingView userId={user.id} neighborhoodId={membership.neighborhood_id} />
+) : activeView === "giveaway" ? (
+  <GivingAwayView userId={user.id} neighborhoodId={membership.neighborhood_id} />
+) : (
+  <BorrowingView userId={user.id} neighborhoodId={membership.neighborhood_id} />
+)}
     </div>
   );
 }
@@ -91,11 +96,12 @@ async function LendingView({
   const { data: items, error: itemsError } = await supabase
     .from("items")
     .select(
-      "id, name, description, image_url, category_id, status, category:categories(name)"
+      "id, name, description, image_url, category_id, status, listing_type, category:categories(name)"
     )
     .eq("owner_id", userId)
     .eq("is_active", true)
     .eq("neighborhood_id", neighborhoodId)
+    .eq("listing_type", "loan")
     .order("created_at", { ascending: false });
   if (itemsError) console.error("My-items query error:", itemsError);
 
@@ -253,7 +259,92 @@ async function LendingView({
     </>
   );
 }
+async function GivingAwayView({
+  userId,
+  neighborhoodId,
+}: {
+  userId: string;
+  neighborhoodId: string;
+}) {
+  const supabase = await createClient();
 
+  const { data: categories } = await supabase.from("categories").select("id, name").order("name");
+
+  const { data: items, error } = await supabase
+    .from("items")
+    .select("id, name, description, image_url, category_id, status, listing_type")
+    .eq("owner_id", userId)
+    .eq("neighborhood_id", neighborhoodId)
+    .eq("listing_type", "giveaway")
+    .eq("is_active", true)
+    .order("created_at", { ascending: false });
+  if (error) console.error("Giving away items query error:", error);
+
+  const itemIds = (items ?? []).map((i) => i.id);
+  const { data: threads } = itemIds.length
+    ? await supabase.from("giveaway_threads").select("id, item_id").in("item_id", itemIds)
+    : { data: [] };
+  const threadCountByItem = new Map<string, number>();
+  for (const t of threads ?? []) {
+    threadCountByItem.set(t.item_id, (threadCountByItem.get(t.item_id) ?? 0) + 1);
+  }
+
+  const available = (items ?? []).filter((i) => i.status === "available");
+  const unavailable = (items ?? []).filter((i) => i.status !== "available");
+
+  return (
+    <>
+      <NewItemForm categories={categories ?? []} defaultListingType="giveaway" />
+
+      <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {available.map((item) => (
+          <div key={item.id} className="commons-card-flat p-3">
+            <div className="grid grid-cols-[1fr_auto] gap-3">
+              <div>
+                <h3 className="text-sm font-bold">{item.name}</h3>
+                <span className="commons-stamp commons-stamp-teal mt-1 inline-block">available</span>
+                {(threadCountByItem.get(item.id) ?? 0) > 0 && (
+                  <p className="mt-1 font-mono text-[10px] text-commons-brick">
+                    {threadCountByItem.get(item.id)} asked
+                  </p>
+                )}
+              </div>
+              {item.image_url && (
+                <div className="commons-shipwindow" style={{ width: "6rem" }}>
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={item.image_url} alt="" />
+                </div>
+              )}
+              <div className="col-span-2">
+                <EditItemForm item={item} categories={categories ?? []} />
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {available.length === 0 && (
+          <p className="font-mono text-sm">Nothing marked as giving away yet.</p>
+        )}
+      </div>
+
+      {unavailable.length > 0 && (
+        <details className="mt-8">
+          <summary className="cursor-pointer font-mono text-sm font-bold uppercase">
+            {unavailable.length} given away
+          </summary>
+          <div className="mt-3 flex flex-col gap-2">
+            {unavailable.map((item) => (
+              <div key={item.id} className="commons-card-flat flex items-center justify-between gap-3 p-3">
+                <p className="text-sm font-bold">{item.name}</p>
+                <span className="commons-stamp">unavailable</span>
+              </div>
+            ))}
+          </div>
+        </details>
+      )}
+    </>
+  );
+}
 async function BorrowingView({
   userId,
   neighborhoodId,

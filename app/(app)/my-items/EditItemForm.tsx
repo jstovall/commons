@@ -11,6 +11,7 @@ interface Item {
   image_url: string | null;
   category_id: string | null;
   status: string;
+  listing_type: string;
 }
 
 export default function EditItemForm({
@@ -79,6 +80,17 @@ export default function EditItemForm({
           className="commons-input text-sm"
         />
         <ImageFileInput name="image_file" label="Replace photo (optional)" />
+        <label className="flex items-center gap-2 text-sm">
+  <input
+    type="checkbox"
+    name="listing_type"
+    value="giveaway"
+    defaultChecked={item.listing_type === "giveaway"}
+    onChange={() => setSaved(false)}
+    className="h-4 w-4 border-2 border-commons-ink"
+  />
+  Giving away (not a loan)
+</label>
         <div className="flex items-center gap-3">
           <button
             disabled={isPending}

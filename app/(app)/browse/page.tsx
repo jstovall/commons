@@ -63,7 +63,10 @@ export default async function BrowsePage({
       .eq("neighborhood_id", membership.neighborhood_id);
 
     if (!isAdmin) {
-      query = query.eq("content_flag", false).eq("is_active", true);
+      query = query
+      .eq("content_flag", false)
+      .eq("is_active", true)
+      .eq("listing_type", "loan");
     }
 
     const result = await query.maybeSingle();
@@ -80,6 +83,7 @@ export default async function BrowsePage({
          owner:profiles!items_owner_id_fkey(display_name)`
       )
       .eq("is_active", true)
+      .eq("listing_type", "loan")
       .eq("content_flag", false)
       .eq("neighborhood_id", membership.neighborhood_id)
       .order("created_at", { ascending: false });

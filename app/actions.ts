@@ -261,19 +261,23 @@ export async function createItem(formData: FormData) {
     imageUrl = publicUrlData.publicUrl;
   }
 
-  const { error } = await supabase.from("items").insert({
-    id: itemId,
-    neighborhood_id: membership.neighborhood_id,
-    owner_id: user.id,
-    name: formData.get("name") as string,
-    description: (formData.get("description") as string) || null,
-    image_url: imageUrl,
-    category_id: (formData.get("category_id") as string) || null,
-  });
+  const listingType = formData.get("listing_type") === "giveaway" ? "giveaway" : "loan";
 
-  if (error) throw new Error(error.message);
-  revalidatePath("/my-items");
-  revalidatePath("/browse", "page");
+const { error } = await supabase.from("items").insert({
+  id: itemId,
+  neighborhood_id: membership.neighborhood_id,
+  owner_id: user.id,
+  name: formData.get("name") as string,
+  description: (formData.get("description") as string) || null,
+  image_url: imageUrl,
+  category_id: (formData.get("category_id") as string) || null,
+  listing_type: listingType,
+});
+
+if (error) throw new Error(error.message);
+revalidatePath("/my-items");
+revalidatePath("/browse", "page");
+revalidatePath("/free", "page");
 }
 
 export async function updateItem(formData: FormData) {
@@ -493,10 +497,12 @@ async function requireAdminMembership() {
 export async function flagContent(formData: FormData) {
   const { supabase, user } = await requireActiveMembership();
   const targetType = formData.get("target_type") as
-    | "item"
-    | "loan_message"
-    | "item_request"
-    | "item_request_response";
+  | "item"
+  | "loan_message"
+  | "item_request"
+  | "item_request_response"
+  | "free_pile"
+  | "giveaway_message";
   const targetId = formData.get("target_id") as string;
   const reason = (formData.get("reason") as string)?.trim();
   if (!reason) return;
@@ -531,6 +537,7 @@ export async function flagContent(formData: FormData) {
       .eq("id", targetId)
       .maybeSingle();
     neighborhoodId = data?.neighborhood_id ?? null;
+  
   } else if (targetType === "item_request_response") {
     const { data } = await supabase
       .from("item_request_responses")
@@ -545,7 +552,29 @@ export async function flagContent(formData: FormData) {
         .maybeSingle();
       neighborhoodId = req?.neighborhood_id ?? null;
     }
+  
+  } else if (targetType === "free_pile") {
+  const { data } = await supabase
+    .from("free_piles")
+    .select("neighborhood_id")
+    .eq("id", targetId)
+    .maybeSingle();
+  neighborhoodId = data?.neighborhood_id ?? null;
+} else if (targetType === "giveaway_message") {
+  const { data } = await supabase
+    .from("giveaway_messages")
+    .select("thread_id")
+    .eq("id", targetId)
+    .maybeSingle();
+  if (data) {
+    const { data: thread } = await supabase
+      .from("giveaway_threads")
+      .select("neighborhood_id")
+      .eq("id", data.thread_id)
+      .maybeSingle();
+    neighborhoodId = thread?.neighborhood_id ?? null;
   }
+}
 
   if (!neighborhoodId) throw new Error("Could not determine neighborhood for report");
 
@@ -577,11 +606,13 @@ export async function recordActivity() {
 export async function resolveReport(formData: FormData) {
   const { supabase, user } = await requireAdminMembership();
   const reportId = formData.get("report_id") as string;
-  const targetType = formData.get("target_type") as
+const targetType = formData.get("target_type") as
   | "item"
   | "loan_message"
   | "item_request"
-  | "item_request_response";
+  | "item_request_response"
+  | "free_pile"
+  | "giveaway_message";
   const targetId = formData.get("target_id") as string;
   const action = formData.get("action") as "dismiss" | "hide";
 
@@ -602,8 +633,25 @@ export async function resolveReport(formData: FormData) {
         .maybeSingle();
       contentOwnerId = data?.owner_id ?? null;
       await supabase.from("items").update({ content_flag: true }).eq("id", targetId);
-    }
     
+    }
+    else if (targetType === "free_pile") {
+  const { data } = await supabase
+    .from("free_piles")
+    .select("posted_by")
+    .eq("id", targetId)
+    .maybeSingle();
+  contentOwnerId = data?.posted_by ?? null;
+  await supabase.from("free_piles").update({ content_flag: true }).eq("id", targetId);
+} else if (targetType === "giveaway_message") {
+  const { data } = await supabase
+    .from("giveaway_messages")
+    .select("sender_id")
+    .eq("id", targetId)
+    .maybeSingle();
+  contentOwnerId = data?.sender_id ?? null;
+  await supabase.from("giveaway_messages").delete().eq("id", targetId);
+}
     else if (targetType === "loan_message") {
       const { data } = await supabase
         .from("loan_messages")
@@ -629,7 +677,7 @@ export async function resolveReport(formData: FormData) {
   contentOwnerId = data?.responder_id ?? null;
   await supabase.from("item_request_responses").delete().eq("id", targetId);
 }
-    
+   
   }
 
 let updateQuery = supabase.from("reports").update({
@@ -717,6 +765,124 @@ export async function sendModerationMessage(formData: FormData) {
   });
   if (error) throw new Error(error.message);
   revalidatePath(`/moderation/${threadId}`, "page");
+}
+
+// --- Giving Away items ---------------------------------------------------
+
+export async function startGiveawayThread(formData: FormData) {
+  const { supabase, user, membership } = await requireActiveMembership();
+  const itemId = formData.get("item_id") as string;
+
+  const { data: item } = await supabase
+    .from("items")
+    .select("owner_id, name")
+    .eq("id", itemId)
+    .maybeSingle();
+  if (!item) throw new Error("Item not found");
+  if (item.owner_id === user.id) throw new Error("You can't request your own item");
+
+  const { data: existing } = await supabase
+    .from("giveaway_threads")
+    .select("id")
+    .eq("item_id", itemId)
+    .eq("requester_id", user.id)
+    .maybeSingle();
+
+  let threadId = existing?.id;
+
+  if (!threadId) {
+    const { data: newThread, error } = await supabase
+      .from("giveaway_threads")
+      .insert({
+        item_id: itemId,
+        neighborhood_id: membership.neighborhood_id,
+        owner_id: item.owner_id,
+        requester_id: user.id,
+      })
+      .select("id")
+      .single();
+    if (error) throw new Error(error.message);
+    threadId = newThread.id;
+
+    await supabase.from("giveaway_messages").insert({
+      thread_id: threadId,
+      sender_id: null,
+      is_system: true,
+      message: `Conversation started about: "${item.name}"`,
+    });
+
+    await supabase.from("notifications").insert({
+      user_id: item.owner_id,
+      neighborhood_id: membership.neighborhood_id,
+      type: "giveaway_request",
+      title: "Someone wants your item",
+      body: `A neighbor is interested in "${item.name}"`,
+      link_url: `/free/threads/${threadId}`,
+    });
+  }
+
+  redirect(`/free/threads/${threadId}`);
+}
+
+export async function sendGiveawayMessage(formData: FormData) {
+  const { supabase, user } = await requireActiveMembership();
+  const threadId = formData.get("thread_id") as string;
+  const message = (formData.get("message") as string)?.trim();
+  if (!message) return;
+
+  const { error } = await supabase.from("giveaway_messages").insert({
+    thread_id: threadId,
+    sender_id: user.id,
+    message,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath(`/free/threads/${threadId}`, "page");
+}
+
+// --- Free piles ------------------------------------------------------------
+
+export async function createFreePile(formData: FormData) {
+  const { supabase, user, membership } = await requireActiveMembership();
+
+  const pileId = crypto.randomUUID();
+  let imageUrl: string | null = null;
+
+  const file = formData.get("image_file") as File | null;
+  if (file && file.size > 0) {
+    const ext = file.name.split(".").pop() || "jpg";
+    const path = `${membership.neighborhood_id}/${user.id}/pile-${pileId}.${ext}`;
+    const { error: uploadError } = await supabase.storage
+      .from("item-images")
+      .upload(path, file, { contentType: file.type, upsert: true });
+    if (uploadError) throw new Error(uploadError.message);
+    const { data: publicUrlData } = supabase.storage.from("item-images").getPublicUrl(path);
+    imageUrl = publicUrlData.publicUrl;
+  }
+
+  const { error } = await supabase.from("free_piles").insert({
+    id: pileId,
+    neighborhood_id: membership.neighborhood_id,
+    posted_by: user.id,
+    title: formData.get("title") as string,
+    description: (formData.get("description") as string) || null,
+    location: (formData.get("location") as string) || null,
+    image_url: imageUrl,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/free", "page");
+}
+
+export async function updateFreePileStatus(formData: FormData) {
+  const { supabase } = await requireActiveMembership();
+  const pileId = formData.get("pile_id") as string;
+  const newStatus = formData.get("new_status") as string;
+
+  const { error } = await supabase.rpc("update_free_pile_status", {
+    _pile_id: pileId,
+    _new_status: newStatus,
+  });
+  if (error) throw new Error(error.message);
+  revalidatePath("/free", "page");
 }
 
 // --- Neighborhood admin --------------------------------------------------
