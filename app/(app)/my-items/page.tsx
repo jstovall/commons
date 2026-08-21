@@ -8,6 +8,7 @@ import { getCurrentMembership } from "@/lib/current-neighborhood";
 import { formatDate } from "@/lib/format";
 import NewItemForm from "./NewItemForm";
 import EditItemForm from "./EditItemForm";
+import { respondToGiveawayRequest } from "@/app/actions";
 
 const loanStatusStamp: Record<string, string> = {
   requested: "commons-stamp commons-stamp-brick",
@@ -289,11 +290,64 @@ async function GivingAwayView({
     threadCountByItem.set(t.item_id, (threadCountByItem.get(t.item_id) ?? 0) + 1);
   }
 
+  const { data: pendingRequests, error: reqError } = await supabase
+  .from("giveaway_threads")
+  .select(
+    `id, status, created_at,
+     item:items(name),
+     requester:profiles!giveaway_threads_requester_id_fkey(display_name)`
+  )
+  .eq("owner_id", userId)
+  .eq("neighborhood_id", neighborhoodId)
+  .eq("status", "pending")
+  .order("created_at", { ascending: false });
+if (reqError) console.error("Pending giveaway requests query error:", reqError);
+
   const available = (items ?? []).filter((i) => i.status === "available");
   const unavailable = (items ?? []).filter((i) => i.status !== "available");
 
   return (
     <>
+      {pendingRequests && pendingRequests.length > 0 && (
+  <div className="mb-8">
+    <h3 className="mb-3 font-mono text-sm font-bold uppercase">
+      Requests on your giveaway items
+    </h3>
+    <div className="flex flex-col gap-3">
+      {pendingRequests.map((req) => (
+        <div key={req.id} className="commons-card-flat p-3">
+          <p className="text-sm">
+            <span className="font-mono font-bold">
+              {req.requester?.display_name}
+            </span>{" "}
+            wants{" "}
+            <span className="font-mono font-bold">{req.item?.name}</span>
+          </p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            <form action={respondToGiveawayRequest}>
+              <input type="hidden" name="thread_id" value={req.id} />
+              <input type="hidden" name="action" value="approve" />
+              <button className="commons-button text-xs">Approve</button>
+            </form>
+            <form action={respondToGiveawayRequest}>
+              <input type="hidden" name="thread_id" value={req.id} />
+              <input type="hidden" name="action" value="deny" />
+              <button className="commons-button commons-button-danger text-xs">
+                Deny
+              </button>
+            </form>
+          </div>
+          <a
+            href={`/free/threads/${req.id}`}
+            className="mt-2 inline-block font-mono text-xs font-bold underline"
+          >
+            view &amp; message →
+          </a>
+        </div>
+      ))}
+    </div>
+  </div>
+)}
       <NewItemForm categories={categories ?? []} defaultListingType="giveaway" />
 
       <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

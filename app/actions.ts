@@ -318,6 +318,65 @@ export async function updateItem(formData: FormData) {
   revalidatePath("/free", "page");
 }
 
+export async function respondToGiveawayRequest(formData: FormData) {
+  const { supabase, user } = await requireActiveMembership();
+  const threadId = formData.get("thread_id") as string;
+  const action = formData.get("action") as "approve" | "deny";
+
+  const { data: thread } = await supabase
+    .from("giveaway_threads")
+    .select("id, item_id, owner_id, requester_id, neighborhood_id")
+    .eq("id", threadId)
+    .maybeSingle();
+  if (!thread) throw new Error("Thread not found");
+  if (thread.owner_id !== user.id) throw new Error("Not authorized");
+
+  const newStatus = action === "approve" ? "approved" : "declined";
+
+  const { error } = await supabase
+    .from("giveaway_threads")
+    .update({ status: newStatus })
+    .eq("id", threadId);
+  if (error) throw new Error(error.message);
+
+  await supabase.from("giveaway_messages").insert({
+    thread_id: threadId,
+    sender_id: null,
+    is_system: true,
+    message:
+      action === "approve"
+        ? "Request approved — item marked as given away."
+        : "Request declined.",
+  });
+
+  if (action === "approve") {
+    await supabase.from("items").update({ status: "unavailable" }).eq("id", thread.item_id);
+  }
+
+  const { data: item } = await supabase
+    .from("items")
+    .select("name")
+    .eq("id", thread.item_id)
+    .maybeSingle();
+
+  await supabase.from("notifications").insert({
+    user_id: thread.requester_id,
+    neighborhood_id: thread.neighborhood_id,
+    type: action === "approve" ? "giveaway_approved" : "giveaway_declined",
+    title: action === "approve" ? "Request approved!" : "Request declined",
+    body:
+      action === "approve"
+        ? `Your request for "${item?.name ?? "an item"}" was approved.`
+        : `Your request for "${item?.name ?? "an item"}" was declined.`,
+    link_url: `/free/threads/${threadId}`,
+  });
+
+  revalidatePath("/my-items", "page");
+  revalidatePath("/free", "page");
+  revalidatePath(`/free/threads/${threadId}`, "page");
+}
+
+
 export async function deleteItem(formData: FormData) {
   const { supabase } = await requireActiveMembership();
   const itemId = formData.get("item_id") as string;

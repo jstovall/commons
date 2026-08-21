@@ -2,6 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sendGiveawayMessage } from "@/app/actions";
 import { formatDateTime } from "@/lib/format";
+import { respondToGiveawayRequest } from "@/app/actions";
 
 export default async function GiveawayThreadPage({
   params,
@@ -18,7 +19,7 @@ export default async function GiveawayThreadPage({
   const { data: thread, error: threadError } = await supabase
     .from("giveaway_threads")
     .select(
-      `id, owner_id, requester_id,
+      `id, owner_id, requester_id, status,
        item:items(name),
        owner:profiles!giveaway_threads_owner_id_fkey(display_name),
        requester:profiles!giveaway_threads_requester_id_fkey(display_name)`
@@ -49,6 +50,29 @@ export default async function GiveawayThreadPage({
 
       <h2 className="commons-heading mb-1 mt-3 text-3xl">{thread.item?.name}</h2>
       <p className="mb-4 font-mono text-xs text-commons-ink/70">with {otherName}</p>
+      {thread.owner_id === user.id && thread.status === "pending" && (
+  <div className="mb-4 flex flex-wrap gap-2">
+    <form action={respondToGiveawayRequest}>
+      <input type="hidden" name="thread_id" value={thread.id} />
+      <input type="hidden" name="action" value="approve" />
+      <button className="commons-button text-xs">Approve</button>
+    </form>
+    <form action={respondToGiveawayRequest}>
+      <input type="hidden" name="thread_id" value={thread.id} />
+      <input type="hidden" name="action" value="deny" />
+      <button className="commons-button commons-button-danger text-xs">Deny</button>
+    </form>
+  </div>
+)}
+{thread.status !== "pending" && (
+  <span
+    className={`commons-stamp mb-4 inline-block ${
+      thread.status === "approved" ? "commons-stamp-teal" : "commons-stamp"
+    }`}
+  >
+    {thread.status}
+  </span>
+)}
 
       <div className="flex flex-col gap-3">
         {messages?.map((m) => {
