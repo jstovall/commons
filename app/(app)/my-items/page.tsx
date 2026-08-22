@@ -116,31 +116,10 @@ async function LendingView({
     a === "Uncategorized" ? 1 : b === "Uncategorized" ? -1 : a.localeCompare(b)
   );
 
-  const flaggedItemIds = (items ?? []).filter((i) => i.content_flag).map((i) => i.id);
-const flaggedThreadMap = new Map<string, string>();
-if (flaggedItemIds.length > 0) {
-  const { data: relatedReports } = await supabase
-    .from("reports")
-    .select("id, target_id")
-    .eq("target_type", "item")
-    .in("target_id", flaggedItemIds);
-  const reportIdToTarget = new Map((relatedReports ?? []).map((r) => [r.id, r.target_id]));
-  const reportIds = (relatedReports ?? []).map((r) => r.id);
-  if (reportIds.length > 0) {
-    const { data: threads } = await supabase
-      .from("moderation_threads")
-      .select("id, report_id, created_at")
-      .in("report_id", reportIds)
-      .order("created_at", { ascending: false });
-for (const t of threads ?? []) {
-      if (!t.report_id) continue;
-      const targetId = reportIdToTarget.get(t.report_id);
-      if (typeof targetId === "string" && !flaggedThreadMap.has(targetId)) {
-        flaggedThreadMap.set(targetId, t.id);
-      }
-    }
-  }
-}
+const { data: myFlaggedThreads } = await supabase.rpc("get_my_flagged_item_threads");
+const flaggedThreadMap = new Map(
+  (myFlaggedThreads ?? []).map((r) => [r.item_id, r.thread_id])
+);
 
 
   const { data: incomingLoans, error: loansError } = await supabase
@@ -335,31 +314,10 @@ async function GivingAwayView({
   for (const t of threads ?? []) {
     threadCountByItem.set(t.item_id, (threadCountByItem.get(t.item_id) ?? 0) + 1);
   }
-  const flaggedItemIds = (items ?? []).filter((i) => i.content_flag).map((i) => i.id);
-const flaggedThreadMap = new Map<string, string>();
-if (flaggedItemIds.length > 0) {
-  const { data: relatedReports } = await supabase
-    .from("reports")
-    .select("id, target_id")
-    .eq("target_type", "item")
-    .in("target_id", flaggedItemIds);
-  const reportIdToTarget = new Map((relatedReports ?? []).map((r) => [r.id, r.target_id]));
-  const reportIds = (relatedReports ?? []).map((r) => r.id);
-  if (reportIds.length > 0) {
-    const { data: threads } = await supabase
-      .from("moderation_threads")
-      .select("id, report_id, created_at")
-      .in("report_id", reportIds)
-      .order("created_at", { ascending: false });
-    for (const t of threads ?? []) {
-  if (!t.report_id) continue;
-  const targetId = reportIdToTarget.get(t.report_id);
-  if (typeof targetId === "string" && !flaggedThreadMap.has(targetId)) {
-    flaggedThreadMap.set(targetId, t.id);
-  }
-}
-  }
-}
+const { data: myFlaggedThreads } = await supabase.rpc("get_my_flagged_item_threads");
+const flaggedThreadMap = new Map(
+  (myFlaggedThreads ?? []).map((r) => [r.item_id, r.thread_id])
+);
 
   const { data: pendingRequests, error: reqError } = await supabase
   .from("giveaway_threads")
