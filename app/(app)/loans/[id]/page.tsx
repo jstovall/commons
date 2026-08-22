@@ -84,15 +84,14 @@ export default async function LoanDetailPage({
     {formatDate(loan.due_date)}
   </p>
 )}
-
-        {loan.borrower_message && (
-          <p className="mt-2 text-sm italic">
+{loan.borrower_message && (
+          <p className="mb-2 text-sm italic">
             Original note: &ldquo;{loan.borrower_message}&rdquo;
           </p>
         )}
 
         {isOwner && (
-          <div className="mt-4 flex flex-wrap gap-2">
+          <div className="mb-4 flex flex-wrap gap-2">
             {loan.status === "requested" && (
               <>
                 <form action={respondToLoan}>
@@ -109,24 +108,24 @@ export default async function LoanDetailPage({
                 </form>
               </>
             )}
-{loan.status === "approved" && (
-  <form action={respondToLoan} className="mt-1 flex flex-wrap items-end gap-2">
-    <input type="hidden" name="loan_id" value={loan.id} />
-    <input type="hidden" name="action" value="checkout" />
-    <label className="font-mono text-[10px] font-bold uppercase">
-      Requested return-by date (optional)
-      <input
-        type="date"
-        name="due_date"
-        defaultValue={defaultDueDate}
-        className="commons-input mt-1 block text-xs"
-      />
-    </label>
-    <button className="commons-button text-xs">
-      Mark checked out
-    </button>
-  </form>
-)}
+            {loan.status === "approved" && (
+              <form action={respondToLoan} className="flex flex-wrap items-end gap-2">
+                <input type="hidden" name="loan_id" value={loan.id} />
+                <input type="hidden" name="action" value="checkout" />
+                <label className="font-mono text-[10px] font-bold uppercase">
+                  Requested return-by date (optional)
+                  <input
+                    type="date"
+                    name="due_date"
+                    defaultValue={defaultDueDate}
+                    className="commons-input mt-1 block text-xs"
+                  />
+                </label>
+                <button className="commons-button text-xs">
+                  Mark checked out
+                </button>
+              </form>
+            )}
             {(loan.status === "checked_out" || loan.status === "overdue") && (
               <form action={respondToLoan}>
                 <input type="hidden" name="loan_id" value={loan.id} />
@@ -140,7 +139,7 @@ export default async function LoanDetailPage({
         )}
 
         {isBorrower && loan.status === "requested" && (
-          <form action={respondToLoan} className="mt-4">
+          <form action={respondToLoan} className="mb-4">
             <input type="hidden" name="loan_id" value={loan.id} />
             <input type="hidden" name="action" value="cancel" />
             <button className="commons-button commons-button-secondary text-xs">
@@ -190,26 +189,26 @@ export default async function LoanDetailPage({
               >
                 {formatDateTime(m.created_at)}
               </p>
-            {!fromMe && (
-  <details className="mt-1">
-    <summary className="cursor-pointer font-mono text-[10px] opacity-60">
-      🚩 report
-    </summary>
-    <form action={flagContent} className="mt-1 flex gap-1">
-      <input type="hidden" name="target_type" value="loan_message" />
-      <input type="hidden" name="target_id" value={m.id} />
-      <input
-        name="reason"
-        required
-        placeholder="Reason"
-        className="commons-input flex-1 text-xs"
-      />
-      <button className="commons-button commons-button-secondary text-xs">
-        Send
-      </button>
-    </form>
-  </details>
-)}
+              {!fromMe && (
+                <details className="mt-1">
+                  <summary className="cursor-pointer font-mono text-[10px] opacity-60">
+                    🚩 report
+                  </summary>
+                  <form action={flagContent} className="mt-1 flex gap-1">
+                    <input type="hidden" name="target_type" value="loan_message" />
+                    <input type="hidden" name="target_id" value={m.id} />
+                    <input
+                      name="reason"
+                      required
+                      placeholder="Reason"
+                      className="commons-input flex-1 text-xs"
+                    />
+                    <button className="commons-button commons-button-secondary text-xs">
+                      Send
+                    </button>
+                  </form>
+                </details>
+              )}
             </div>
           );
         })}

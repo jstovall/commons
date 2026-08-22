@@ -1,13 +1,14 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
-import { formatDate } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import {
   createFreePile,
   updateFreePileStatus,
   startGiveawayThread,
   flagContent,
 } from "@/app/actions";
+import ImageFileInput from "../my-items/ImageFileInput";
 
 export default async function FreePage() {
   const supabase = await createClient();
@@ -79,15 +80,7 @@ for (const t of threads ?? []) {
           <input name="title" required placeholder="What's out there?" className="commons-input text-sm" />
           <textarea name="description" placeholder="Any details…" className="commons-input text-sm" />
           <input name="location" placeholder="Where (e.g. curb at 5th & Oak)" className="commons-input text-sm" />
-          <label className="font-mono text-xs font-bold uppercase">
-            Photo (optional)
-            <input
-              type="file"
-              name="image_file"
-              accept="image/*"
-              className="commons-input mt-1 w-full text-sm font-body normal-case"
-            />
-          </label>
+          <ImageFileInput name="image_file" label="Photo (optional)" />
           <button className="commons-button self-start text-sm">Post pile</button>
         </form>
       </details>
@@ -99,9 +92,9 @@ for (const t of threads ?? []) {
             <div className="flex items-start justify-between">
               <div>
                 <h3 className="commons-heading text-2xl leading-tight">{pile.title}</h3>
-                <p className="font-mono text-xs text-commons-ink/70">
-                  posted by {pile.poster?.display_name} · updated {formatDate(pile.last_confirmed_at)}
-                </p>
+<p className="font-mono text-xs text-commons-ink/70">
+  posted by {pile.poster?.display_name} · updated {formatDateTime(pile.last_confirmed_at)}
+</p>
               </div>
               <span className="commons-stamp commons-stamp-olive">free pile</span>
             </div>
