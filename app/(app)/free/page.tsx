@@ -209,20 +209,41 @@ for (const t of threads ?? []) {
               )}
 
               {!isOwner &&
-                (myThreadId ? (
-                  <a
-                    href={`/free/threads/${myThreadId}`}
-                    className="mt-3 inline-block font-mono text-xs font-bold underline"
-                  >
-                    💬 continue conversation →
-                  </a>
-                ) : (
-                  <form action={startGiveawayThread} className="mt-3">
-                    <input type="hidden" name="item_id" value={item.id} />
-                    <button className="commons-button text-sm">Message owner</button>
-                  </form>
-                ))}
-            </div>
+  (myThreadId ? (
+    <a
+      href={`/free/threads/${myThreadId}`}
+      className="mt-3 inline-block font-mono text-xs font-bold underline"
+    >
+      💬 continue conversation →
+    </a>
+  ) : (
+    <form action={startGiveawayThread} className="mt-3">
+      <input type="hidden" name="item_id" value={item.id} />
+      <button className="commons-button text-sm">Message owner</button>
+    </form>
+  ))}
+
+{!isOwner && (
+  <details className="mt-2">
+    <summary className="cursor-pointer font-mono text-[10px] text-commons-ink/50">
+      🚩 report this item
+    </summary>
+    <form action={flagContent} className="mt-1 flex gap-2">
+      <input type="hidden" name="target_type" value="item" />
+      <input type="hidden" name="target_id" value={item.id} />
+      <input
+        name="reason"
+        required
+        placeholder="Why report this item?"
+        className="commons-input flex-1 text-xs"
+      />
+      <button className="commons-button commons-button-secondary text-xs">
+        Submit
+      </button>
+    </form>
+  </details>
+)}
+</div>
           );
         })}
 

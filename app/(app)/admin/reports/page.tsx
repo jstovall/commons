@@ -74,6 +74,29 @@ for (const r of reports ?? []) {
     authorName: data?.responder?.display_name ?? "unknown",
     contextUrl: data?.request_id ? `/asks?ask=${data.request_id}` : null,
   };
+  } else if (r.target_type === "free_pile") {
+  const { data } = await supabase
+    .from("free_piles")
+    .select("title, description, poster:profiles!free_piles_posted_by_fkey(display_name)")
+    .eq("id", r.target_id)
+    .maybeSingle();
+  details[r.id] = {
+    text: data ? `${data.title} — ${data.description ?? ""}` : "(pile not found)",
+    authorName: data?.poster?.display_name ?? "unknown",
+    contextUrl: "/free",
+  };
+} else if (r.target_type === "giveaway_message") {
+  const { data } = await supabase
+    .from("giveaway_messages")
+    .select("message, thread_id, sender:profiles(display_name)")
+    .eq("id", r.target_id)
+    .maybeSingle();
+  details[r.id] = {
+    text: data?.message ?? "(message not found)",
+    authorName: data?.sender?.display_name ?? "unknown",
+    contextUrl: data?.thread_id ? `/free/threads/${data.thread_id}` : null,
+  };
+
   } else {
     details[r.id] = { text: "(unknown content)", authorName: "unknown", contextUrl: null };
   }
