@@ -97,7 +97,7 @@ async function LendingView({
   const { data: items, error: itemsError } = await supabase
     .from("items")
     .select(
-      "id, name, description, image_url, category_id, status, listing_type, category:categories(name)"
+      "id, name, description, image_url, category_id, status, listing_type, content_flag, category:categories(name)"
     )
     .eq("owner_id", userId)
     .eq("is_active", true)
@@ -115,6 +115,33 @@ async function LendingView({
   const sortedGroups = Array.from(groupedItems.entries()).sort(([a], [b]) =>
     a === "Uncategorized" ? 1 : b === "Uncategorized" ? -1 : a.localeCompare(b)
   );
+
+  const flaggedItemIds = (items ?? []).filter((i) => i.content_flag).map((i) => i.id);
+const flaggedThreadMap = new Map<string, string>();
+if (flaggedItemIds.length > 0) {
+  const { data: relatedReports } = await supabase
+    .from("reports")
+    .select("id, target_id")
+    .eq("target_type", "item")
+    .in("target_id", flaggedItemIds);
+  const reportIdToTarget = new Map((relatedReports ?? []).map((r) => [r.id, r.target_id]));
+  const reportIds = (relatedReports ?? []).map((r) => r.id);
+  if (reportIds.length > 0) {
+    const { data: threads } = await supabase
+      .from("moderation_threads")
+      .select("id, report_id, created_at")
+      .in("report_id", reportIds)
+      .order("created_at", { ascending: false });
+for (const t of threads ?? []) {
+      if (!t.report_id) continue;
+      const targetId = reportIdToTarget.get(t.report_id);
+      if (typeof targetId === "string" && !flaggedThreadMap.has(targetId)) {
+        flaggedThreadMap.set(targetId, t.id);
+      }
+    }
+  }
+}
+
 
   const { data: incomingLoans, error: loansError } = await supabase
     .from("loans")
@@ -225,21 +252,40 @@ async function LendingView({
 </h3>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
 {groupItems?.map((item) => (
-  <div key={item.id} className="commons-card-flat p-3">
- <div className="grid grid-cols-[1fr_auto] gap-3">
-  <div>
-    <h3 className="text-sm font-bold">{item.name}</h3>
-    <span className={`${itemStatusStamp[item.status] ?? "commons-stamp"} mt-1 inline-block`}>
-      {item.status.replace("_", " ")}
-    </span>
-  </div>
+  <div
+    key={item.id}
+    className={`commons-card-flat p-3 ${item.content_flag ? "border-4 border-commons-brick" : ""}`}
+  >
+    <div className="grid grid-cols-[1fr_auto] gap-3">
+      <div>
+        <h3 className="text-sm font-bold">{item.name}</h3>
+        <span className={`${itemStatusStamp[item.status] ?? "commons-stamp"} mt-1 inline-block`}>
+          {item.status.replace("_", " ")}
+        </span>
+      </div>
 
   {item.image_url && (
-    <div className="commons-shipwindow" style={{ width: "7rem" }}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={item.image_url} alt="" />
-    </div>
-  )}
+        <div className="commons-shipwindow" style={{ width: "6rem" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={item.image_url} alt="" />
+        </div>
+      )}
+
+      {item.content_flag && (
+        <div className="col-span-2">
+          <span className="commons-stamp commons-stamp-brick">🚩 removed by moderator</span>
+          {flaggedThreadMap.get(item.id) && (
+            <a
+              href={`/moderation/${flaggedThreadMap.get(item.id)}`}
+              className="ml-2 font-mono text-xs font-bold underline"
+            >
+              view conversation →
+            </a>
+          )}
+        </div>
+      )}
+
+
 
   <div className="col-span-2">
     <EditItemForm item={item} categories={categories ?? []} />
@@ -273,7 +319,7 @@ async function GivingAwayView({
 
   const { data: items, error } = await supabase
     .from("items")
-    .select("id, name, description, image_url, category_id, status, listing_type")
+    .select("id, name, description, content_flag, image_url, category_id, status, listing_type")
     .eq("owner_id", userId)
     .eq("neighborhood_id", neighborhoodId)
     .eq("listing_type", "giveaway")
@@ -289,6 +335,31 @@ async function GivingAwayView({
   for (const t of threads ?? []) {
     threadCountByItem.set(t.item_id, (threadCountByItem.get(t.item_id) ?? 0) + 1);
   }
+  const flaggedItemIds = (items ?? []).filter((i) => i.content_flag).map((i) => i.id);
+const flaggedThreadMap = new Map<string, string>();
+if (flaggedItemIds.length > 0) {
+  const { data: relatedReports } = await supabase
+    .from("reports")
+    .select("id, target_id")
+    .eq("target_type", "item")
+    .in("target_id", flaggedItemIds);
+  const reportIdToTarget = new Map((relatedReports ?? []).map((r) => [r.id, r.target_id]));
+  const reportIds = (relatedReports ?? []).map((r) => r.id);
+  if (reportIds.length > 0) {
+    const { data: threads } = await supabase
+      .from("moderation_threads")
+      .select("id, report_id, created_at")
+      .in("report_id", reportIds)
+      .order("created_at", { ascending: false });
+    for (const t of threads ?? []) {
+  if (!t.report_id) continue;
+  const targetId = reportIdToTarget.get(t.report_id);
+  if (typeof targetId === "string" && !flaggedThreadMap.has(targetId)) {
+    flaggedThreadMap.set(targetId, t.id);
+  }
+}
+  }
+}
 
   const { data: pendingRequests, error: reqError } = await supabase
   .from("giveaway_threads")
@@ -330,12 +401,12 @@ if (reqError) console.error("Pending giveaway requests query error:", reqError);
               <button className="commons-button text-xs">Approve</button>
             </form>
             <form action={respondToGiveawayRequest}>
-              <input type="hidden" name="thread_id" value={req.id} />
-              <input type="hidden" name="action" value="deny" />
-              <button className="commons-button commons-button-danger text-xs">
-                Deny
-              </button>
-            </form>
+  <input type="hidden" name="thread_id" value={req.id} />
+  <input type="hidden" name="action" value="decline" />
+  <button className="commons-button commons-button-danger text-xs">
+    Decline
+  </button>
+</form>
           </div>
           <a
             href={`/free/threads/${req.id}`}
@@ -352,7 +423,10 @@ if (reqError) console.error("Pending giveaway requests query error:", reqError);
 
       <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {available.map((item) => (
-          <div key={item.id} className="commons-card-flat p-3">
+  <div
+    key={item.id}
+    className={`commons-card-flat p-3 ${item.content_flag ? "border-4 border-commons-brick" : ""}`}
+  >
             <div className="grid grid-cols-[1fr_auto] gap-3">
               <div>
                 <h3 className="text-sm font-bold">{item.name}</h3>
@@ -363,12 +437,26 @@ if (reqError) console.error("Pending giveaway requests query error:", reqError);
                   </p>
                 )}
               </div>
-              {item.image_url && (
-                <div className="commons-shipwindow" style={{ width: "6rem" }}>
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img src={item.image_url} alt="" />
-                </div>
-              )}
+                    {item.image_url && (
+        <div className="commons-shipwindow" style={{ width: "6rem" }}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={item.image_url} alt="" />
+        </div>
+      )}
+
+      {item.content_flag && (
+        <div className="col-span-2">
+          <span className="commons-stamp commons-stamp-brick">🚩 removed by moderator</span>
+          {flaggedThreadMap.get(item.id) && (
+            <a
+              href={`/moderation/${flaggedThreadMap.get(item.id)}`}
+              className="ml-2 font-mono text-xs font-bold underline"
+            >
+              view conversation →
+            </a>
+          )}
+        </div>
+      )}
               <div className="col-span-2">
                 <EditItemForm item={item} categories={categories ?? []} />
               </div>

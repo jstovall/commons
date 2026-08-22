@@ -377,6 +377,50 @@ export async function respondToGiveawayRequest(formData: FormData) {
 }
 
 
+export async function relistContent(formData: FormData) {
+  const { supabase } = await requireAdminMembership();
+  const targetType = formData.get("target_type") as string;
+  const targetId = formData.get("target_id") as string;
+  const reportId = formData.get("report_id") as string;
+
+  if (targetType === "item") {
+    await supabase.from("items").update({ content_flag: false }).eq("id", targetId);
+  } else if (targetType === "item_request") {
+    await supabase.from("item_requests").update({ content_flag: false }).eq("id", targetId);
+  } else if (targetType === "free_pile") {
+    await supabase.from("free_piles").update({ content_flag: false }).eq("id", targetId);
+  } else {
+    throw new Error("This content type can't be re-listed");
+  }
+
+  const { data: thread } = await supabase
+    .from("moderation_threads")
+    .select("id, content_owner_id, neighborhood_id")
+    .eq("report_id", reportId)
+    .maybeSingle();
+
+  if (thread) {
+    await supabase.from("moderation_messages").insert({
+      thread_id: thread.id,
+      sender_id: null,
+      is_system: true,
+      message: "Content has been re-listed and is visible again.",
+    });
+
+    await supabase.from("notifications").insert({
+      user_id: thread.content_owner_id,
+      neighborhood_id: thread.neighborhood_id,
+      type: "content_relisted",
+      title: "Your content is back up",
+      body: "A moderator re-listed your content after review.",
+      link_url: `/moderation/${thread.id}`,
+    });
+  }
+
+  revalidatePath("/admin/reports", "page");
+  revalidatePath("/my-items", "page");
+}
+
 export async function deleteItem(formData: FormData) {
   const { supabase } = await requireActiveMembership();
   const itemId = formData.get("item_id") as string;
