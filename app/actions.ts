@@ -704,9 +704,20 @@ export async function recordActivity() {
   } = await supabase.auth.getUser();
   if (!user) return;
 
+  const now = new Date().toISOString();
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("first_active_at")
+    .eq("id", user.id)
+    .maybeSingle();
+
   await supabase
     .from("profiles")
-    .update({ last_active_at: new Date().toISOString() })
+    .update({
+      last_active_at: now,
+      first_active_at: profile?.first_active_at ?? now,
+    })
     .eq("id", user.id);
 }
 
