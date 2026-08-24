@@ -73,22 +73,35 @@ if (data.user && code) {
     }
   }
 
-  if (checkEmail) {
-    return (
-      <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
-        <span className="commons-heading mb-1 self-center text-4xl">
-          {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
-        </span>
-        <div className="commons-card-flat mt-4 p-6 text-center">
-          <p className="commons-heading text-xl">Check your email</p>
-          <p className="mt-2 text-sm">
-            We sent a confirmation link to <strong>{email}</strong> -- email is from Supabase Auth. Click
-            on the link to verify your email and to access the log-in page.
-          </p>
-        </div>
-      </main>
-    );
-  }
+if (checkEmail) {
+  return (
+    <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
+      <span className="commons-heading mb-1 self-center text-4xl">
+        {neighborhoodName ? `${neighborhoodName} Commons` : "commons"}
+      </span>
+      <div className="commons-card-flat mt-4 p-6 text-center">
+        <p className="commons-heading text-xl">Check your email</p>
+        <p className="mt-2 text-sm">
+          We sent a confirmation link to <strong>{email}</strong>. Click it,
+          then come back and sign in — you&apos;ll already be a member of{" "}
+          {neighborhoodName
+            ? `${neighborhoodName} Commons`
+            : "your neighborhood"}
+          .
+        </p>
+        <p className="mt-3 font-mono text-xs text-commons-ink/60">
+          Using a work or school email? If clicking the link doesn&apos;t
+          seem to do anything, your account may already be confirmed — just
+          try{" "}
+          <a href="/login" className="font-mono font-bold underline">
+            signing in
+          </a>
+          .
+        </p>
+      </div>
+    </main>
+  );
+}
 
   return (
     <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center px-6">
