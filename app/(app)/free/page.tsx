@@ -33,7 +33,7 @@ export default async function FreePage() {
   const piles = (pileData ?? []).slice(0, PAGE_SIZE);
   const items = (itemData ?? []).slice(0, PAGE_SIZE);
 
-  const itemIds = items.map((i) => i.id);
+  const itemIds = items.map((i: { id: string }) => i.id);
   const { data: threads } = itemIds.length
     ? await supabase.from("giveaway_threads").select("id, item_id, requester_id, status").in("item_id", itemIds)
     : { data: [] };
