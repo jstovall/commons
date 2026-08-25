@@ -8,6 +8,48 @@ import { cookies } from "next/headers";
 import { getCurrentMembership, CURRENT_NEIGHBORHOOD_COOKIE } from "@/lib/current-neighborhood";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildBrowseQuery } from "@/lib/browse-query";
+import { buildAsksQuery } from "@/lib/asks-query";
+import { buildFreePilesQuery, buildGiveawayItemsQuery } from "@/lib/free-query";
+
+const FREE_PAGE_SIZE = 12;
+
+export async function loadMoreFree(params: { pileOffset: number; itemOffset: number }) {
+  const { supabase, membership } = await requireActiveMembership();
+
+  const { data: pileData, error: pileError } = await buildFreePilesQuery(
+    supabase,
+    membership.neighborhood_id
+  ).range(params.pileOffset, params.pileOffset + FREE_PAGE_SIZE);
+  if (pileError) throw new Error(pileError.message);
+
+  const { data: itemData, error: itemError } = await buildGiveawayItemsQuery(
+    supabase,
+    membership.neighborhood_id
+  ).range(params.itemOffset, params.itemOffset + FREE_PAGE_SIZE);
+  if (itemError) throw new Error(itemError.message);
+
+  return {
+    piles: (pileData ?? []).slice(0, FREE_PAGE_SIZE),
+    pilesHasMore: (pileData?.length ?? 0) > FREE_PAGE_SIZE,
+    items: (itemData ?? []).slice(0, FREE_PAGE_SIZE),
+    itemsHasMore: (itemData?.length ?? 0) > FREE_PAGE_SIZE,
+  };
+}
+
+const ASKS_PAGE_SIZE = 12;
+
+export async function loadMoreAsks(params: { offset: number }) {
+  const { supabase, membership } = await requireActiveMembership();
+
+  const { data, error } = await buildAsksQuery(supabase, membership.neighborhood_id).range(
+    params.offset,
+    params.offset + ASKS_PAGE_SIZE
+  );
+  if (error) throw new Error(error.message);
+
+  const hasMore = (data?.length ?? 0) > ASKS_PAGE_SIZE;
+  return { asks: (data ?? []).slice(0, ASKS_PAGE_SIZE), hasMore };
+}
 
 const BROWSE_PAGE_SIZE = 12;
 
