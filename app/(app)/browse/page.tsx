@@ -113,16 +113,17 @@ export default async function BrowsePage({
         </a>
       )}
 
-      <ItemGrid
-        initialItems={items}
-        initialHasMore={hasMore}
-        favoriteIds={favoriteIds}
-        myLoanEntries={myLoanEntries}
-        currentUserId={user.id}
-        queryParams={{ q, category, filter: selectedFilter }}
-        isDeepLink={Boolean(itemParam)}
-        emptyMessage={itemParam ? "That item couldn't be found." : "No items match your search yet."}
-      />
+<ItemGrid
+  key={`${q ?? ""}-${category ?? ""}-${selectedFilter}-${itemParam ?? ""}`}
+  initialItems={items}
+  initialHasMore={hasMore}
+  favoriteIds={favoriteIds}
+  myLoanEntries={myLoanEntries}
+  currentUserId={user.id}
+  queryParams={{ q, category, filter: selectedFilter }}
+  isDeepLink={Boolean(itemParam)}
+  emptyMessage={itemParam ? "That item couldn't be found." : "No items match your search yet."}
+/>
     </div>
   );
 }
