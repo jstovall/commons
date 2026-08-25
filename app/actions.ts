@@ -7,6 +7,45 @@ import type { Database } from "@/types/database.types";
 import { cookies } from "next/headers";
 import { getCurrentMembership, CURRENT_NEIGHBORHOOD_COOKIE } from "@/lib/current-neighborhood";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { buildBrowseQuery } from "@/lib/browse-query";
+
+const BROWSE_PAGE_SIZE = 12;
+
+export async function loadMoreItems(params: {
+  offset: number;
+  q?: string;
+  category?: string;
+  filter?: string;
+}) {
+  const { supabase, user, membership } = await requireActiveMembership();
+
+  let query = buildBrowseQuery(supabase, {
+    neighborhoodId: membership.neighborhood_id,
+    userId: user.id,
+    q: params.q,
+    category: params.category,
+    filter: params.filter,
+  });
+
+  if ((params.filter ?? "available") === "favorites") {
+    const { data: favorites } = await supabase
+      .from("favorites")
+      .select("item_id")
+      .eq("user_id", user.id);
+    const favIds = (favorites ?? []).map((f: { item_id: string }) => f.item_id);
+    if (favIds.length === 0) return { items: [], hasMore: false };
+    query = query.in("id", favIds);
+  }
+
+  const { data, error } = await query.range(params.offset, params.offset + BROWSE_PAGE_SIZE);
+  if (error) throw new Error(error.message);
+
+  const hasMore = (data?.length ?? 0) > BROWSE_PAGE_SIZE;
+  const items = (data ?? []).slice(0, BROWSE_PAGE_SIZE);
+
+  return { items, hasMore };
+}
+
 
 async function requireActiveMembership() {
   const supabase = await createClient();
