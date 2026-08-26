@@ -75,7 +75,7 @@ export default async function AsksPage() {
       </details>
 
       <AsksList
-        key="asks-list"
+        key={`${asks.length}-${asks[0]?.id ?? "none"}`}
         initialAsks={asks}
         initialHasMore={hasMore}
         currentUserId={user.id}

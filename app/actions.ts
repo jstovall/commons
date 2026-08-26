@@ -61,7 +61,7 @@ export async function loadMoreItems(params: {
 }) {
   const { supabase, user, membership } = await requireActiveMembership();
 
-  let query = buildBrowseQuery(supabase, {
+  let query = await buildBrowseQuery(supabase, {
     neighborhoodId: membership.neighborhood_id,
     userId: user.id,
     q: params.q,
