@@ -653,7 +653,7 @@ export async function createItemRequest(formData: FormData) {
     category_id: (formData.get("category_id") as string) || null,
   });
   if (error) throw new Error(error.message);
-  revalidatePath("/asks");
+    revalidatePath("/asks", "page");
 }
 
 export async function respondToItemRequest(formData: FormData) {
