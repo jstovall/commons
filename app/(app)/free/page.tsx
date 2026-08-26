@@ -5,6 +5,7 @@ import { buildFreePilesQuery, buildGiveawayItemsQuery } from "@/lib/free-query";
 import { createFreePile } from "@/app/actions";
 import ImageFileInput from "../my-items/ImageFileInput";
 import FreeFeed from "./FreeFeed";
+import FreePileForm from "./FreePileForm";
 
 const PAGE_SIZE = 9;
 
@@ -54,16 +55,7 @@ export default async function FreePage() {
         Curb piles and giveaway items from your neighbors — first come, first served.
       </p>
 
-      <details className="commons-card mb-8 p-4">
-        <summary className="cursor-pointer font-mono text-sm font-bold">+ post a free pile</summary>
-        <form action={createFreePile} className="mt-3 flex flex-col gap-3">
-          <input name="title" required placeholder="What's out there?" className="commons-input text-sm" />
-          <textarea name="description" placeholder="Any details…" className="commons-input text-sm" />
-          <input name="location" placeholder="Where (e.g. curb at 5th & Oak)" className="commons-input text-sm" />
-          <ImageFileInput name="image_file" label="Photo (optional)" />
-          <button className="commons-button self-start text-sm">Post pile</button>
-        </form>
-      </details>
+<FreePileForm />
 
       <FreeFeed
         key="free-feed"

@@ -68,5 +68,5 @@ export async function buildBrowseQuery(
     query = query.order("created_at", { ascending: false });
   }
 
-  return query;
+  return { query };
 }

@@ -36,13 +36,17 @@ export default function AsksList({
 
   const threadMap = new Map(threadEntries);
 
-  function handleLoadMore() {
-    startTransition(async () => {
-      const result = await loadMoreAsks({ offset: asks.length });
-      setAsks((prev) => [...prev, ...result.asks]);
-      setHasMore(result.hasMore);
+function handleLoadMore() {
+  startTransition(async () => {
+    const result = await loadMoreAsks({ offset: asks.length });
+    setAsks((prev) => {
+      const existingIds = new Set(prev.map((a) => a.id));
+      const newOnes = result.asks.filter((a: { id: string }) => !existingIds.has(a.id));
+      return [...prev, ...newOnes];
     });
-  }
+    setHasMore(result.hasMore);
+  });
+}
 
   const openAsks = asks.filter((a) => a.status === "open");
   const closedAsks = asks.filter((a) => a.status !== "open");

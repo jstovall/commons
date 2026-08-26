@@ -11,6 +11,24 @@ const FILTER_OPTIONS = [
   { value: "favorites", label: "My Favorites" },
 ];
 
+function SearchIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4"
+      aria-hidden="true"
+    >
+      <circle cx="11" cy="11" r="7" />
+      <line x1="21" y1="21" x2="16.65" y2="16.65" />
+    </svg>
+  );
+}
+
 export default function SearchBar({
   initialQuery,
   initialCategory,
@@ -67,8 +85,8 @@ export default function SearchBar({
           className="commons-input flex-1 text-sm"
         />
         <button type="submit" aria-label="Search" className="commons-button px-3 text-sm">
-          🔍
-        </button>
+  <SearchIcon />
+</button>
       </form>
       <div className="flex gap-2">
         <select

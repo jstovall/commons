@@ -72,13 +72,13 @@ export default async function BrowsePage({
   } else if (selectedFilter === "favorites" && favoriteIds.length === 0) {
     items = [];
   } else {
-    let query = await buildBrowseQuery(supabase, {
-      neighborhoodId: membership.neighborhood_id,
-      userId: user.id,
-      q,
-      category,
-      filter: selectedFilter,
-    });
+    let { query } = await buildBrowseQuery(supabase, {
+  neighborhoodId: membership.neighborhood_id,
+  userId: user.id,
+  q,
+  category,
+  filter: selectedFilter,
+});
     if (selectedFilter === "favorites") {
       query = query.in("id", favoriteIds);
     }

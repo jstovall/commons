@@ -1,9 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import { createItemRequest } from "@/app/actions";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
 import { buildAsksQuery } from "@/lib/asks-query";
 import AsksList from "./AsksList";
+import AskForm from "./AskForm";
 
 const PAGE_SIZE = 9;
 
@@ -48,31 +48,7 @@ export default async function AsksPage() {
         Looking for something nobody&apos;s listed yet? Post an ask and see if a neighbor can help.
       </p>
 
-      <details className="commons-card mb-8 p-4">
-        <summary className="cursor-pointer font-mono text-sm font-bold">+ post an ask</summary>
-        <form action={createItemRequest} className="mt-3 flex flex-col gap-3">
-          <input
-            name="title"
-            required
-            placeholder="What are you looking for?"
-            className="commons-input text-sm"
-          />
-          <select name="category_id" className="commons-input text-sm">
-            <option value="">Choose a category</option>
-            {categories?.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-          <textarea
-            name="description"
-            placeholder="Any details (how long you need it, etc.)"
-            className="commons-input text-sm"
-          />
-          <button className="commons-button self-start text-sm">Post ask</button>
-        </form>
-      </details>
+      <AskForm categories={categories ?? []} />
 
       <AsksList
         key={`${asks.length}-${asks[0]?.id ?? "none"}`}
