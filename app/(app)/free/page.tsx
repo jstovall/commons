@@ -58,7 +58,7 @@ export default async function FreePage() {
 <FreePileForm />
 
       <FreeFeed
-        key="free-feed"
+        key={`${piles.length}-${piles[0]?.id ?? "none"}-${items.length}-${items[0]?.id ?? "none"}`}
         initialPiles={piles}
         initialPilesHasMore={(pileData?.length ?? 0) > PAGE_SIZE}
         initialItems={items}

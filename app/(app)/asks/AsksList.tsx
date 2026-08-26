@@ -2,7 +2,6 @@
 
 import { useState, useTransition } from "react";
 import {
-  createItemRequest,
   respondToItemRequest,
   updateItemRequestStatus,
   flagContent,
@@ -23,20 +22,20 @@ export default function AsksList({
   currentUserId,
   myItems,
   threadEntries,
-}: {
+ }: {
   initialAsks: any[];
   initialHasMore: boolean;
   currentUserId: string;
   myItems: { id: string; name: string }[];
   threadEntries: readonly (readonly [string, string])[];
-}) {
+ }) {
   const [asks, setAsks] = useState(initialAsks);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [isPending, startTransition] = useTransition();
 
   const threadMap = new Map(threadEntries);
 
-function handleLoadMore() {
+ function handleLoadMore() {
   startTransition(async () => {
     const result = await loadMoreAsks({ offset: asks.length });
     setAsks((prev) => {
@@ -46,7 +45,7 @@ function handleLoadMore() {
     });
     setHasMore(result.hasMore);
   });
-}
+ }
 
   const openAsks = asks.filter((a) => a.status === "open");
   const closedAsks = asks.filter((a) => a.status !== "open");

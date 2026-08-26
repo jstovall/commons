@@ -13,7 +13,7 @@ export function buildAsksQuery(supabase: any, neighborhoodId: string) {
     )
     .eq("content_flag", false)
     .eq("neighborhood_id", neighborhoodId)
-.order("status", { ascending: true })
+.order("status", { ascending: false })
 .order("created_at", { ascending: false })
 .order("id", { ascending: true });
 }
