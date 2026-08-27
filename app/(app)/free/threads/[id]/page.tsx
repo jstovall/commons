@@ -2,7 +2,7 @@ import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { sendGiveawayMessage } from "@/app/actions";
 import { formatDateTime } from "@/lib/format";
-import { respondToGiveawayRequest } from "@/app/actions";
+import { respondToGiveawayRequestForm } from "@/app/actions";
 
 export default async function GiveawayThreadPage({
   params,
@@ -52,12 +52,12 @@ export default async function GiveawayThreadPage({
       <p className="mb-4 font-mono text-xs text-commons-ink/70">with {otherName}</p>
       {thread.owner_id === user.id && thread.status === "pending" && (
   <div className="mb-4 flex flex-wrap gap-2">
-    <form action={respondToGiveawayRequest}>
+    <form action={respondToGiveawayRequestForm}>
       <input type="hidden" name="thread_id" value={thread.id} />
       <input type="hidden" name="action" value="approve" />
       <button className="commons-button text-xs">Approve</button>
     </form>
-    <form action={respondToGiveawayRequest}>
+    <form action={respondToGiveawayRequestForm}>
       <input type="hidden" name="thread_id" value={thread.id} />
       <input type="hidden" name="action" value="decline" />
       <button className="commons-button commons-button-danger text-xs">Decline</button>

@@ -1,14 +1,11 @@
 import { createClient } from "@/lib/supabase/server";
 import { redirect } from "next/navigation";
-import {
-  createItem,
-  respondToLoan,
-} from "@/app/actions";
 import { getCurrentMembership } from "@/lib/current-neighborhood";
 import { formatDate } from "@/lib/format";
 import NewItemForm from "./NewItemForm";
 import EditItemForm from "./EditItemForm";
-import { respondToGiveawayRequest } from "@/app/actions";
+import BorrowRequestCard from "./BorrowRequestCard";
+import GiveawayRequestCard from "./GiveawayRequestCard";
 
 const loanStatusStamp: Record<string, string> = {
   requested: "commons-stamp commons-stamp-brick",
@@ -144,78 +141,8 @@ const flaggedThreadMap = new Map(
           </h3>
           <div className="flex flex-col gap-3">
             {incomingLoans.map((loan) => (
-              <div key={loan.id} className="commons-card-flat p-3">
-                <p className="text-sm">
-                  <span className="font-mono font-bold">
-                    {loan.borrower?.display_name}
-                  </span>{" "}
-                  wants to borrow{" "}
-                  <span className="font-mono font-bold">{loan.item?.name}</span>
-                </p>
-                {loan.borrower_message && (
-                  <p className="mt-1 text-sm italic">
-                    &ldquo;{loan.borrower_message}&rdquo;
-                  </p>
-                )}
-                <div className="mt-2 flex flex-wrap gap-2">
-                  {loan.status === "requested" && (
-                    <>
-                      <form action={respondToLoan}>
-                        <input type="hidden" name="loan_id" value={loan.id} />
-                        <input type="hidden" name="action" value="approve" />
-                        <button className="commons-button text-xs">
-                          Approve
-                        </button>
-                      </form>
-                      <form action={respondToLoan}>
-                        <input type="hidden" name="loan_id" value={loan.id} />
-                        <input type="hidden" name="action" value="decline" />
-                        <button className="commons-button commons-button-danger text-xs">
-                          Decline
-                        </button>
-                      </form>
-                    </>
-                  )}
-                  {loan.status === "approved" && (
-                    <form action={respondToLoan} className="flex flex-wrap items-end gap-2">
-                      <input type="hidden" name="loan_id" value={loan.id} />
-                      <input type="hidden" name="action" value="checkout" />
-                      <label className="font-mono text-[10px] font-bold uppercase">
-                        Return-by (optional)
-                        <input
-                          type="date"
-                          name="due_date"
-                          defaultValue={
-                            new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
-                              .toISOString()
-                              .slice(0, 10)
-                          }
-                          className="commons-input mt-1 block text-xs"
-                        />
-                      </label>
-                      <button className="commons-button text-xs">
-                        Mark checked out
-                      </button>
-                    </form>
-                  )}
-                  {(loan.status === "checked_out" || loan.status === "overdue") && (
-                    <form action={respondToLoan}>
-                      <input type="hidden" name="loan_id" value={loan.id} />
-                      <input type="hidden" name="action" value="return" />
-                      <button className="commons-button text-xs">
-                        Mark returned
-                      </button>
-                    </form>
-                  )}
-                </div>
-                <a
-                  href={`/loans/${loan.id}`}
-                  className="mt-2 inline-block font-mono text-xs font-bold underline"
-                >
-                  view &amp; message →
-                </a>
-              </div>
-            ))}
+  <BorrowRequestCard key={loan.id} loan={loan} />
+))}
           </div>
         </div>
       )}
@@ -344,36 +271,8 @@ if (reqError) console.error("Pending giveaway requests query error:", reqError);
     </h3>
     <div className="flex flex-col gap-3">
       {pendingRequests.map((req) => (
-        <div key={req.id} className="commons-card-flat p-3">
-          <p className="text-sm">
-            <span className="font-mono font-bold">
-              {req.requester?.display_name}
-            </span>{" "}
-            wants{" "}
-            <span className="font-mono font-bold">{req.item?.name}</span>
-          </p>
-          <div className="mt-2 flex flex-wrap gap-2">
-            <form action={respondToGiveawayRequest}>
-              <input type="hidden" name="thread_id" value={req.id} />
-              <input type="hidden" name="action" value="approve" />
-              <button className="commons-button text-xs">Approve</button>
-            </form>
-            <form action={respondToGiveawayRequest}>
-  <input type="hidden" name="thread_id" value={req.id} />
-  <input type="hidden" name="action" value="decline" />
-  <button className="commons-button commons-button-danger text-xs">
-    Decline
-  </button>
-</form>
-          </div>
-          <a
-            href={`/free/threads/${req.id}`}
-            className="mt-2 inline-block font-mono text-xs font-bold underline"
-          >
-            view &amp; message →
-          </a>
-        </div>
-      ))}
+  <GiveawayRequestCard key={req.id} request={req} />
+))}
     </div>
   </div>
 )}

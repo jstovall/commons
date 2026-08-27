@@ -1,4 +1,4 @@
-import { respondToLoan, sendLoanMessage, flagContent } from "@/app/actions";
+import { respondToLoanForm, sendLoanMessage, flagContent } from "@/app/actions";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { formatDateTime, formatDate } from "@/lib/format";
@@ -92,12 +92,12 @@ export default async function LoanDetailPage({
         <div className="mb-4 flex flex-wrap gap-2">
           {loan.status === "requested" && (
             <>
-              <form action={respondToLoan}>
+              <form action={respondToLoanForm}>
                 <input type="hidden" name="loan_id" value={loan.id} />
                 <input type="hidden" name="action" value="approve" />
                 <button className="commons-button text-xs">Approve</button>
               </form>
-              <form action={respondToLoan}>
+              <form action={respondToLoanForm}>
                 <input type="hidden" name="loan_id" value={loan.id} />
                 <input type="hidden" name="action" value="decline" />
                 <button className="commons-button commons-button-danger text-xs">
@@ -107,7 +107,7 @@ export default async function LoanDetailPage({
             </>
           )}
           {loan.status === "approved" && (
-            <form action={respondToLoan} className="flex flex-wrap items-end gap-2">
+            <form action={respondToLoanForm} className="flex flex-wrap items-end gap-2">
               <input type="hidden" name="loan_id" value={loan.id} />
               <input type="hidden" name="action" value="checkout" />
               <label className="font-mono text-[10px] font-bold uppercase">
@@ -125,7 +125,7 @@ export default async function LoanDetailPage({
             </form>
           )}
           {(loan.status === "checked_out" || loan.status === "overdue") && (
-            <form action={respondToLoan}>
+            <form action={respondToLoanForm}>
               <input type="hidden" name="loan_id" value={loan.id} />
               <input type="hidden" name="action" value="return" />
               <button className="commons-button text-xs">
@@ -137,7 +137,7 @@ export default async function LoanDetailPage({
       )}
 
       {isBorrower && loan.status === "requested" && (
-        <form action={respondToLoan} className="mb-4">
+        <form action={respondToLoanForm} className="mb-4">
           <input type="hidden" name="loan_id" value={loan.id} />
           <input type="hidden" name="action" value="cancel" />
           <button className="commons-button commons-button-secondary text-xs">

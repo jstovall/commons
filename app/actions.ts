@@ -13,6 +13,8 @@ import { buildFreePilesQuery, buildGiveawayItemsQuery } from "@/lib/free-query";
 
 const FREE_PAGE_SIZE = 12;
 
+export type LoanActionResult = { success: true } | { success: false; error: string };
+
 export async function loadMoreFree(params: { pileOffset: number; itemOffset: number }) {
   const { supabase, membership } = await requireActiveMembership();
 
@@ -399,64 +401,73 @@ export async function updateItem(formData: FormData) {
   revalidatePath("/free", "page");
 }
 
-export async function respondToGiveawayRequest(formData: FormData) {
-  const { supabase, user } = await requireActiveMembership();
-  const threadId = formData.get("thread_id") as string;
-  const action = formData.get("action") as "approve" | "decline";
+export async function respondToGiveawayRequest(formData: FormData): Promise<LoanActionResult> {
+  try {
+    const { supabase, user } = await requireActiveMembership();
+    const threadId = formData.get("thread_id") as string;
+    const action = formData.get("action") as "approve" | "decline";
 
-  const { data: thread } = await supabase
-    .from("giveaway_threads")
-    .select("id, item_id, owner_id, requester_id, neighborhood_id")
-    .eq("id", threadId)
-    .maybeSingle();
-  if (!thread) throw new Error("Thread not found");
-  if (thread.owner_id !== user.id) throw new Error("Not authorized");
+    const { data: thread } = await supabase
+      .from("giveaway_threads")
+      .select("id, item_id, owner_id, requester_id, neighborhood_id")
+      .eq("id", threadId)
+      .maybeSingle();
+    if (!thread) throw new Error("Thread not found");
+    if (thread.owner_id !== user.id) throw new Error("Not authorized");
 
-  const newStatus = action === "approve" ? "approved" : "declined";
+    const newStatus = action === "approve" ? "approved" : "declined";
 
-  const { error } = await supabase
-    .from("giveaway_threads")
-    .update({ status: newStatus })
-    .eq("id", threadId);
-  if (error) throw new Error(error.message);
+    const { error } = await supabase
+      .from("giveaway_threads")
+      .update({ status: newStatus })
+      .eq("id", threadId);
+    if (error) throw new Error(error.message);
 
-  await supabase.from("giveaway_messages").insert({
-    thread_id: threadId,
-    sender_id: null,
-    is_system: true,
-    message:
-      action === "approve"
-        ? "Request approved — item marked as given away."
-        : "Request declined.",
-  });
+    await supabase.from("giveaway_messages").insert({
+      thread_id: threadId,
+      sender_id: null,
+      is_system: true,
+      message:
+        action === "approve"
+          ? "Request approved — item marked as given away."
+          : "Request declined.",
+    });
 
-  if (action === "approve") {
-    await supabase.from("items").update({ status: "unavailable" }).eq("id", thread.item_id);
+    if (action === "approve") {
+      await supabase.from("items").update({ status: "unavailable" }).eq("id", thread.item_id);
+    }
+
+    const { data: item } = await supabase
+      .from("items")
+      .select("name")
+      .eq("id", thread.item_id)
+      .maybeSingle();
+
+    await supabase.from("notifications").insert({
+      user_id: thread.requester_id,
+      neighborhood_id: thread.neighborhood_id,
+      type: action === "approve" ? "giveaway_approved" : "giveaway_declined",
+      title: action === "approve" ? "Request approved!" : "Request declined",
+      body:
+        action === "approve"
+          ? `Your request for "${item?.name ?? "an item"}" was approved.`
+          : `Your request for "${item?.name ?? "an item"}" was declined.`,
+      link_url: `/free/threads/${threadId}`,
+    });
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Something went wrong" };
   }
-
-  const { data: item } = await supabase
-    .from("items")
-    .select("name")
-    .eq("id", thread.item_id)
-    .maybeSingle();
-
-  await supabase.from("notifications").insert({
-    user_id: thread.requester_id,
-    neighborhood_id: thread.neighborhood_id,
-    type: action === "approve" ? "giveaway_approved" : "giveaway_declined",
-    title: action === "approve" ? "Request approved!" : "Request declined",
-    body:
-      action === "approve"
-        ? `Your request for "${item?.name ?? "an item"}" was approved.`
-        : `Your request for "${item?.name ?? "an item"}" was declined.`,
-    link_url: `/free/threads/${threadId}`,
-  });
-
-  revalidatePath("/my-items", "page");
-  revalidatePath("/free", "page");
-  revalidatePath(`/free/threads/${threadId}`, "page");
 }
 
+export async function respondToGiveawayRequestForm(formData: FormData): Promise<void> {
+  await respondToGiveawayRequest(formData);
+  revalidatePath("/my-items", "page");
+  revalidatePath("/free", "page");
+  const threadId = formData.get("thread_id") as string;
+  revalidatePath(`/free/threads/${threadId}`, "page");
+}
 
 export async function relistContent(formData: FormData) {
   const { supabase } = await requireAdminMembership();
@@ -603,43 +614,54 @@ export async function toggleItemAvailability(formData: FormData) {
   revalidatePath("/browse", "page");
 }
 
-export async function respondToLoan(formData: FormData) {
-  const { supabase } = await requireActiveMembership();
-  const loanId = formData.get("loan_id") as string;
-  const action = formData.get("action") as
-    | "approve"
-    | "decline"
-    | "checkout"
-    | "return"
-    | "cancel";
+export async function respondToLoan(formData: FormData): Promise<LoanActionResult> {
+  try {
+    const { supabase } = await requireActiveMembership();
+    const loanId = formData.get("loan_id") as string;
+    const action = formData.get("action") as
+      | "approve"
+      | "decline"
+      | "checkout"
+      | "return"
+      | "cancel";
 
-  type LoanUpdate = Database["public"]["Tables"]["loans"]["Update"];
+    type LoanUpdate = Database["public"]["Tables"]["loans"]["Update"];
 
-  let update: LoanUpdate;
+    let update: LoanUpdate;
 
-  if (action === "checkout") {
-    const dueDate = (formData.get("due_date") as string) || null;
-    update = {
-      status: "checked_out",
-      checked_out_at: new Date().toISOString(),
-      due_date: dueDate,
-    };
-  } else {
-    const statusMap: Record<string, LoanUpdate> = {
-      approve: { status: "approved", approved_at: new Date().toISOString() },
-      decline: { status: "declined" },
-      return: { status: "returned", returned_at: new Date().toISOString() },
-      cancel: { status: "cancelled" },
-    };
-    update = statusMap[action];
+    if (action === "checkout") {
+      const dueDate = (formData.get("due_date") as string) || null;
+      update = {
+        status: "checked_out",
+        checked_out_at: new Date().toISOString(),
+        due_date: dueDate,
+      };
+    } else {
+      const statusMap: Record<string, LoanUpdate> = {
+        approve: { status: "approved", approved_at: new Date().toISOString() },
+        decline: { status: "declined" },
+        return: { status: "returned", returned_at: new Date().toISOString() },
+        cancel: { status: "cancelled" },
+      };
+      update = statusMap[action];
+    }
+
+    const { error } = await supabase.from("loans").update(update).eq("id", loanId);
+    if (error) throw new Error(error.message);
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Something went wrong" };
   }
-
-  const { error } = await supabase.from("loans").update(update).eq("id", loanId);
-  if (error) throw new Error(error.message);
-  revalidatePath("/browse", "page");
-  revalidatePath("/my-items", "page");
 }
 
+export async function respondToLoanForm(formData: FormData): Promise<void> {
+  await respondToLoan(formData);
+  revalidatePath("/browse", "page");
+  revalidatePath("/my-items", "page");
+  const loanId = formData.get("loan_id") as string;
+  revalidatePath(`/loans/${loanId}`, "page");
+}
 // --- Item requests ("wanted" board) ----------------------------------------
 
 export async function createItemRequest(formData: FormData) {
