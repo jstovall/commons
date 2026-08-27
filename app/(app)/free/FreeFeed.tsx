@@ -32,6 +32,9 @@ export default function FreeFeed({
   const [itemsHasMore, setItemsHasMore] = useState(initialItemsHasMore);
   const [isPending, startTransition] = useTransition();
 
+  const [pendingPileIds, setPendingPileIds] = useState<Set<string>>(new Set());
+  const [pileErrors, setPileErrors] = useState<Record<string, string>>({});
+
   const threadCountMap = new Map(threadCountByItem);
   const myThreadMap = new Map(myThreadByItem);
 
@@ -45,6 +48,47 @@ export default function FreeFeed({
     });
   }
 
+  async function handlePileStatusChange(pileId: string, newStatus: string) {
+    setPendingPileIds((prev) => new Set(prev).add(pileId));
+    setPileErrors((prev) => {
+      const next = { ...prev };
+      delete next[pileId];
+      return next;
+    });
+
+    const formData = new FormData();
+    formData.set("pile_id", pileId);
+    formData.set("new_status", newStatus);
+
+    try {
+      await updateFreePileStatus(formData);
+      const now = new Date().toISOString();
+      setPiles((prev) =>
+        prev.map((p) =>
+          p.id === pileId
+            ? {
+                ...p,
+                status: newStatus,
+                claimed_by: newStatus === "claimed_pending" ? currentUserId : null,
+                last_confirmed_at: newStatus === "still_there" ? now : p.last_confirmed_at,
+              }
+            : p
+        )
+      );
+    } catch (err) {
+      setPileErrors((prev) => ({
+        ...prev,
+        [pileId]: err instanceof Error ? err.message : "Something went wrong",
+      }));
+    } finally {
+      setPendingPileIds((prev) => {
+        const next = new Set(prev);
+        next.delete(pileId);
+        return next;
+      });
+    }
+  }
+
   const activePiles = piles.filter((p) => p.status !== "gone");
   const gonePiles = piles.filter((p) => p.status === "gone");
   const activeItems = items.filter((i) => i.status === "available");
@@ -54,95 +98,108 @@ export default function FreeFeed({
   return (
     <>
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {activePiles.map((pile) => (
-          <div key={pile.id} className="commons-card p-4">
-            <div className="commons-tape" />
-            <div className="flex items-start justify-between">
-              <div>
-                <h3 className="commons-heading text-2xl leading-tight">{pile.title}</h3>
-                <p className="font-mono text-xs text-commons-ink/70">
-                  posted by {pile.poster?.display_name} · updated {formatDateTime(pile.last_confirmed_at)}
-                </p>
+        {activePiles.map((pile) => {
+          const isPileBusy = pendingPileIds.has(pile.id);
+          const pileError = pileErrors[pile.id];
+
+          return (
+            <div key={pile.id} className="commons-card p-4">
+              <div className="commons-tape" />
+              <div className="flex items-start justify-between">
+                <div>
+                  <h3 className="commons-heading text-2xl leading-tight">{pile.title}</h3>
+                  <p className="font-mono text-xs text-commons-ink/70">
+                    posted by {pile.poster?.display_name} · updated {formatDateTime(pile.last_confirmed_at)}
+                  </p>
+                </div>
+                <span className="commons-stamp commons-stamp-olive">free pile</span>
               </div>
-              <span className="commons-stamp commons-stamp-olive">free pile</span>
-            </div>
 
-            {pile.image_url && (
-              <div className="commons-shipwindow mt-3">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={pile.image_url} alt={pile.title} />
+              {pile.image_url && (
+                <div className="commons-shipwindow mt-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={pile.image_url} alt={pile.title} />
+                </div>
+              )}
+              {pile.description && <p className="mt-2 text-sm">{pile.description}</p>}
+              {pile.location && (
+                <p className="mt-1 font-mono text-xs text-commons-teal">📍 {pile.location}</p>
+              )}
+
+              <span
+                className={`commons-stamp mt-2 inline-block ${
+                  pile.status === "claimed_pending" ? "commons-stamp-brick" : "commons-stamp-teal"
+                }`}
+              >
+                {pile.status === "claimed_pending" ? "claimed — awaiting confirmation" : "still there"}
+              </span>
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                {pile.status === "still_there" && (
+                  <>
+                    <button
+                      onClick={() => handlePileStatusChange(pile.id, "still_there")}
+                      disabled={isPileBusy}
+                      className="commons-button commons-button-secondary text-xs disabled:opacity-50"
+                    >
+                      {isPileBusy ? "…" : "Still there"}
+                    </button>
+                    <button
+                      onClick={() => handlePileStatusChange(pile.id, "claimed_pending")}
+                      disabled={isPileBusy}
+                      className="commons-button text-xs disabled:opacity-50"
+                    >
+                      {isPileBusy ? "…" : "Mark claimed"}
+                    </button>
+                  </>
+                )}
+                {pile.status === "claimed_pending" && (
+                  <>
+                    <button
+                      onClick={() => handlePileStatusChange(pile.id, "still_there")}
+                      disabled={isPileBusy}
+                      className="commons-button commons-button-secondary text-xs disabled:opacity-50"
+                    >
+                      {isPileBusy ? "…" : "Actually, still here"}
+                    </button>
+                    {pile.claimed_by !== currentUserId && (
+                      <button
+                        onClick={() => handlePileStatusChange(pile.id, "gone")}
+                        disabled={isPileBusy}
+                        className="commons-button text-xs disabled:opacity-50"
+                      >
+                        {isPileBusy ? "…" : "Confirm it's gone"}
+                      </button>
+                    )}
+                  </>
+                )}
               </div>
-            )}
-            {pile.description && <p className="mt-2 text-sm">{pile.description}</p>}
-            {pile.location && (
-              <p className="mt-1 font-mono text-xs text-commons-teal">📍 {pile.location}</p>
-            )}
 
-            <span
-              className={`commons-stamp mt-2 inline-block ${
-                pile.status === "claimed_pending" ? "commons-stamp-brick" : "commons-stamp-teal"
-              }`}
-            >
-              {pile.status === "claimed_pending" ? "claimed — awaiting confirmation" : "still there"}
-            </span>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              {pile.status === "still_there" && (
-                <>
-                  <form action={updateFreePileStatus}>
-                    <input type="hidden" name="pile_id" value={pile.id} />
-                    <input type="hidden" name="new_status" value="still_there" />
-                    <button className="commons-button commons-button-secondary text-xs">
-                      Still there
-                    </button>
-                  </form>
-                  <form action={updateFreePileStatus}>
-                    <input type="hidden" name="pile_id" value={pile.id} />
-                    <input type="hidden" name="new_status" value="claimed_pending" />
-                    <button className="commons-button text-xs">Mark claimed</button>
-                  </form>
-                </>
+              {pileError && (
+                <p className="mt-2 font-mono text-xs text-commons-brick">{pileError}</p>
               )}
-              {pile.status === "claimed_pending" && (
-                <>
-                  <form action={updateFreePileStatus}>
-                    <input type="hidden" name="pile_id" value={pile.id} />
-                    <input type="hidden" name="new_status" value="still_there" />
-                    <button className="commons-button commons-button-secondary text-xs">
-                      Actually, still here
-                    </button>
+
+              {pile.posted_by !== currentUserId && (
+                <details className="mt-2">
+                  <summary className="cursor-pointer font-mono text-[10px] text-commons-ink/50">
+                    🚩 report
+                  </summary>
+                  <form action={flagContent} className="mt-1 flex gap-2">
+                    <input type="hidden" name="target_type" value="free_pile" />
+                    <input type="hidden" name="target_id" value={pile.id} />
+                    <input
+                      name="reason"
+                      required
+                      placeholder="Why report this?"
+                      className="commons-input flex-1 text-xs"
+                    />
+                    <button className="commons-button commons-button-secondary text-xs">Submit</button>
                   </form>
-                  {pile.claimed_by !== currentUserId && (
-                    <form action={updateFreePileStatus}>
-                      <input type="hidden" name="pile_id" value={pile.id} />
-                      <input type="hidden" name="new_status" value="gone" />
-                      <button className="commons-button text-xs">Confirm it&apos;s gone</button>
-                    </form>
-                  )}
-                </>
+                </details>
               )}
             </div>
-
-            {pile.posted_by !== currentUserId && (
-              <details className="mt-2">
-                <summary className="cursor-pointer font-mono text-[10px] text-commons-ink/50">
-                  🚩 report
-                </summary>
-                <form action={flagContent} className="mt-1 flex gap-2">
-                  <input type="hidden" name="target_type" value="free_pile" />
-                  <input type="hidden" name="target_id" value={pile.id} />
-                  <input
-                    name="reason"
-                    required
-                    placeholder="Why report this?"
-                    className="commons-input flex-1 text-xs"
-                  />
-                  <button className="commons-button commons-button-secondary text-xs">Submit</button>
-                </form>
-              </details>
-            )}
-          </div>
-        ))}
+          );
+        })}
 
         {activeItems.map((item) => {
           const isOwner = item.owner_id === currentUserId;
