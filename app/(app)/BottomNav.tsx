@@ -9,7 +9,6 @@ const navItems = [
   { href: "/asks", label: "Asks" },
   { href: "/free", label: "Free" },
   { href: "/my-items", label: "My Items" },
-  { href: "/profile", label: "Profile" },
 ];
 
 const MIN_OVERLAY_MS = 260;

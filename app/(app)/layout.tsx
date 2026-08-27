@@ -9,6 +9,7 @@ import NotificationsPromptBanner from "./NotificationsPromptBanner";
 import OceanWaves from "./OceanWaves";
 import RefreshOnFocus from "./RefreshOnFocus";
 import ViewportFix from "./ViewportFix";
+import ProfileSun from "./ProfileSun";
 
 export default async function AppLayout({
   children,
@@ -24,6 +25,19 @@ export default async function AppLayout({
 
 const { current } = await getCurrentMembership(user.id);
 if (!current) redirect("/join");
+
+const { data: profile } = await supabase
+  .from("profiles")
+  .select("display_name")
+  .eq("id", user.id)
+  .maybeSingle();
+
+const initials = (profile?.display_name ?? "?")
+  .split(" ")
+  .map((part) => part[0])
+  .slice(0, 2)
+  .join("")
+  .toUpperCase();
 
 const isAdmin = current.role === "admin" || current.role === "moderator";
 const neighborhoodName = current.neighborhood?.name;
@@ -41,6 +55,9 @@ const neighborhoodName = current.neighborhood?.name;
   <NotificationsPromptBanner />
 <header className="relative overflow-hidden bg-commons-teal">
   <div className="relative px-5 pb-3 pt-4 text-center">
+    <div className="absolute left-2 top-1/2 -translate-y-1/2">
+      <ProfileSun initials={initials} />
+    </div>
     <Link
       href="/notifications"
       className="absolute right-4 top-1/2 -translate-y-1/2 text-2xl text-commons-cream"
@@ -57,8 +74,6 @@ const neighborhoodName = current.neighborhood?.name;
     </span>
   </div>
   <OceanWaves />
-  <RefreshOnFocus />
-  <ViewportFix />
 </header>
 <main className="mx-auto w-full max-w-5xl px-4 py-6">{children}</main>
 
