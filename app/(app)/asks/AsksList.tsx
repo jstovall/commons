@@ -32,6 +32,8 @@ export default function AsksList({
   const [asks, setAsks] = useState(initialAsks);
   const [hasMore, setHasMore] = useState(initialHasMore);
   const [isPending, startTransition] = useTransition();
+const [pendingAskIds, setPendingAskIds] = useState<Set<string>>(new Set());
+const [askErrors, setAskErrors] = useState<Record<string, string>>({});
 
   const threadMap = new Map(threadEntries);
 
@@ -46,6 +48,35 @@ export default function AsksList({
     setHasMore(result.hasMore);
   });
  }
+
+ async function handleAskStatusChange(askId: string, newStatus: string) {
+  setPendingAskIds((prev) => new Set(prev).add(askId));
+  setAskErrors((prev) => {
+    const next = { ...prev };
+    delete next[askId];
+    return next;
+  });
+
+  const formData = new FormData();
+  formData.set("request_id", askId);
+  formData.set("status", newStatus);
+
+  const result = await updateItemRequestStatus(formData);
+  if (result.success) {
+    setAsks((prev) =>
+      prev.map((a) => (a.id === askId ? { ...a, status: newStatus } : a))
+    );
+  } else {
+    setAskErrors((prev) => ({ ...prev, [askId]: result.error }));
+  }
+
+  setPendingAskIds((prev) => {
+    const next = new Set(prev);
+    next.delete(askId);
+    return next;
+  });
+}
+
 
   const openAsks = asks.filter((a) => a.status === "open");
   const closedAsks = asks.filter((a) => a.status !== "open");
@@ -75,19 +106,28 @@ export default function AsksList({
         {ask.description && <p className="mt-2 text-sm">{ask.description}</p>}
 
         {isMine && ask.status === "open" && (
-          <div className="mt-3 flex gap-2">
-            <form action={updateItemRequestStatus}>
-              <input type="hidden" name="request_id" value={ask.id} />
-              <input type="hidden" name="status" value="fulfilled" />
-              <button className="commons-button text-xs">Mark fulfilled</button>
-            </form>
-            <form action={updateItemRequestStatus}>
-              <input type="hidden" name="request_id" value={ask.id} />
-              <input type="hidden" name="status" value="cancelled" />
-              <button className="commons-button commons-button-secondary text-xs">Cancel</button>
-            </form>
-          </div>
-        )}
+  <div className="mt-3 flex flex-col gap-2">
+    <div className="flex gap-2">
+      <button
+        onClick={() => handleAskStatusChange(ask.id, "fulfilled")}
+        disabled={pendingAskIds.has(ask.id)}
+        className="commons-button text-xs disabled:opacity-50"
+      >
+        {pendingAskIds.has(ask.id) ? "…" : "Mark fulfilled"}
+      </button>
+      <button
+        onClick={() => handleAskStatusChange(ask.id, "cancelled")}
+        disabled={pendingAskIds.has(ask.id)}
+        className="commons-button commons-button-secondary text-xs disabled:opacity-50"
+      >
+        {pendingAskIds.has(ask.id) ? "…" : "Cancel"}
+      </button>
+    </div>
+    {askErrors[ask.id] && (
+      <p className="font-mono text-xs text-commons-brick">{askErrors[ask.id]}</p>
+    )}
+  </div>
+)}
 
         {!isMine && (
           <details className="mt-2">

@@ -1174,17 +1174,22 @@ export async function signOutAction() {
   redirect("/login");
 }
 
-export async function updateItemRequestStatus(formData: FormData) {
-  const { supabase } = await requireActiveMembership();
-  const requestId = formData.get("request_id") as string;
-  const status = formData.get("status") as "fulfilled" | "cancelled";
+export async function updateItemRequestStatus(formData: FormData): Promise<LoanActionResult> {
+  try {
+    const { supabase } = await requireActiveMembership();
+    const requestId = formData.get("request_id") as string;
+    const status = formData.get("status") as "fulfilled" | "cancelled";
 
-  const { error } = await supabase
-    .from("item_requests")
-    .update({ status })
-    .eq("id", requestId);
-  if (error) throw new Error(error.message);
-  revalidatePath("/asks");
+    const { error } = await supabase
+      .from("item_requests")
+      .update({ status })
+      .eq("id", requestId);
+    if (error) throw new Error(error.message);
+
+    return { success: true };
+  } catch (err) {
+    return { success: false, error: err instanceof Error ? err.message : "Something went wrong" };
+  }
 }
 
 // --- Notifications ("notifications" board) ----------------------------------------
