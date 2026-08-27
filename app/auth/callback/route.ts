@@ -6,22 +6,26 @@ export async function GET(request: NextRequest) {
   const code = searchParams.get("code");
   const next = searchParams.get("next") ?? "/browse";
 
-  if (code) {
-    const supabase = await createClient();
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
-    if (!error) {
-      return NextResponse.redirect(`${origin}${next}`);
-    }
-    console.error("Auth callback exchange error:", error);
+if (code) {
+  const supabase = await createClient();
+  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  if (!error) {
+    return NextResponse.redirect(`${origin}${next}`);
   }
+  console.error("Auth callback exchange error:", error);
+}
 
-  // Exchange can fail if the confirmation link opened in a different
-  // browser/app context than the one used to sign up (common on mobile —
-  // e.g. an in-app browser inside a Mail app). The account is confirmed
-  // on Supabase's side either way, and their neighborhood membership was
-  // already created at signup time — so a plain login here is a complete
-  // fallback, not a dead end.
-  const loginUrl = new URL("/login", origin);
-  loginUrl.searchParams.set("confirmed", "1");
-  return NextResponse.redirect(loginUrl);
+// A password-reset link failing (same cross-browser/scanner issue we hit
+// with signup confirmation) needs a different fallback — there's no
+// "just sign in normally" path here, since the whole point was they don't
+// know their current password. Send them back to request a fresh link.
+if (next.startsWith("/reset-password")) {
+  const forgotUrl = new URL("/forgot-password", origin);
+  forgotUrl.searchParams.set("error", "link_failed");
+  return NextResponse.redirect(forgotUrl);
+}
+
+const loginUrl = new URL("/login", origin);
+loginUrl.searchParams.set("confirmed", "1");
+return NextResponse.redirect(loginUrl);
 }

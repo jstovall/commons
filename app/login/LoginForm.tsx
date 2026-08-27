@@ -70,6 +70,11 @@ export default function LoginForm() {
           Create an account
         </a>
       </p>
+      <p className="mt-2 text-center text-sm">
+  <a href="/forgot-password" className="font-mono text-xs font-bold underline">
+    Forgot your password?
+  </a>
+</p>
     </>
   );
 }
