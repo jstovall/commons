@@ -1080,15 +1080,20 @@ export async function createFreePile(formData: FormData) {
     imageUrl = publicUrlData.publicUrl;
   }
 
-  const { error } = await supabase.from("free_piles").insert({
-    id: pileId,
-    neighborhood_id: membership.neighborhood_id,
-    posted_by: user.id,
-    title: formData.get("title") as string,
-    description: (formData.get("description") as string) || null,
-    location: (formData.get("location") as string) || null,
-    image_url: imageUrl,
-  });
+  const latitude = formData.get("latitude") ? parseFloat(formData.get("latitude") as string) : null;
+const longitude = formData.get("longitude") ? parseFloat(formData.get("longitude") as string) : null;
+
+const { error } = await supabase.from("free_piles").insert({
+  id: pileId,
+  neighborhood_id: membership.neighborhood_id,
+  posted_by: user.id,
+  title: formData.get("title") as string,
+  description: (formData.get("description") as string) || null,
+  location: (formData.get("location") as string) || null,
+  latitude,
+  longitude,
+  image_url: imageUrl,
+});
   if (error) throw new Error(error.message);
   revalidatePath("/free", "page");
 }

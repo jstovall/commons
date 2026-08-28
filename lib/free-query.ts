@@ -2,8 +2,8 @@ export function buildFreePilesQuery(supabase: any, neighborhoodId: string) {
   return supabase
     .from("free_piles")
     .select(
-      "id, title, description, image_url, location, status, claimed_by, last_confirmed_at, posted_by, poster:profiles!free_piles_posted_by_fkey(display_name)"
-    )
+  "id, title, description, image_url, location, latitude, longitude, status, claimed_by, last_confirmed_at, posted_by, poster:profiles!free_piles_posted_by_fkey(display_name)"
+)
     .eq("neighborhood_id", neighborhoodId)
     .eq("content_flag", false)
     .order("status", { ascending: true })

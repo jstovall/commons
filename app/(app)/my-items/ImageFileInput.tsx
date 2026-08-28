@@ -38,18 +38,22 @@ async function compressImage(file: File): Promise<File> {
 export default function ImageFileInput({
   name,
   label,
+  onRawFile,
 }: {
   name: string;
   label: string;
+  onRawFile?: (file: File) => void;
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<string | null>(null);
 
-  async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
+  const file = e.target.files?.[0];
+  if (!file) return;
 
-    if (file.size <= SKIP_COMPRESSION_BELOW) {
+  onRawFile?.(file);
+
+  if (file.size <= SKIP_COMPRESSION_BELOW) {
       setStatus(null);
       return;
     }

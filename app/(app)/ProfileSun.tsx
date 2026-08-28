@@ -19,7 +19,7 @@ export default function ProfileSun({ initials }: { initials: string }) {
           <line x1="34" y1="10" x2="36.9" y2="7.2" />
         </g>
       </svg>
-      <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-2 border-commons-ink bg-commons-ochre font-mono text-xs font-bold text-commons-ink shadow-[2px_2px_0_#332B22]">
+      <div className="relative flex h-8 w-8 items-center justify-center rounded-full border-1 bg-commons-ochre font-mono text-xs font-bold text-commons-ink shadow-[2px_2px_0_#332B22]">
         {initials}
       </div>
     </Link>

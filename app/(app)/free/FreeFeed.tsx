@@ -8,6 +8,9 @@ import {
   loadMoreFree,
 } from "@/app/actions";
 import { formatDateTime } from "@/lib/format";
+import dynamic from "next/dynamic";
+
+const PileMapPreview = dynamic(() => import("./PileMapPreview"), { ssr: false });
 
 export default function FreeFeed({
   initialPiles,
@@ -34,7 +37,16 @@ export default function FreeFeed({
 
   const [pendingPileIds, setPendingPileIds] = useState<Set<string>>(new Set());
   const [pileErrors, setPileErrors] = useState<Record<string, string>>({});
+  const [expandedMapIds, setExpandedMapIds] = useState<Set<string>>(new Set());
 
+function toggleMap(pileId: string) {
+  setExpandedMapIds((prev) => {
+    const next = new Set(prev);
+    if (next.has(pileId)) next.delete(pileId);
+    else next.add(pileId);
+    return next;
+  });
+}
   const threadCountMap = new Map(threadCountByItem);
   const myThreadMap = new Map(myThreadByItem);
 
@@ -123,8 +135,23 @@ export default function FreeFeed({
               )}
               {pile.description && <p className="mt-2 text-sm">{pile.description}</p>}
               {pile.location && (
-                <p className="mt-1 font-mono text-xs text-commons-teal">📍 {pile.location}</p>
-              )}
+  <p className="mt-1 font-mono text-xs text-commons-teal">📍 {pile.location}</p>
+)}
+{pile.latitude != null && pile.longitude != null && (
+  <>
+    <button
+      onClick={() => toggleMap(pile.id)}
+      className="mt-1 font-mono text-[10px] font-bold underline"
+    >
+      {expandedMapIds.has(pile.id) ? "hide map" : "view on map"}
+    </button>
+    {expandedMapIds.has(pile.id) && (
+      <div className="mt-2">
+        <PileMapPreview lat={pile.latitude} lng={pile.longitude} />
+      </div>
+    )}
+  </>
+)}
 
               <span
                 className={`commons-stamp mt-2 inline-block ${
