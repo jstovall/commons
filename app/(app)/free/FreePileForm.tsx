@@ -11,7 +11,7 @@ const LocationPicker = dynamic(() => import("./LocationPicker"), { ssr: false })
 
 // Rough Tacoma-area fallback center, used only when a photo has no GPS
 // data and the user hasn't yet adjusted the pin themselves.
-const FALLBACK_CENTER = { lat: 47.2529, lng: -122.4443 };
+const FALLBACK_CENTER = { lat: 47.249346, lng: -122.480673 };
 
 export default function FreePileForm() {
   const router = useRouter();

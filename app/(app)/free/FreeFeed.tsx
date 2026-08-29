@@ -134,14 +134,23 @@ function toggleMap(pileId: string) {
                 </div>
               )}
               {pile.description && <p className="mt-2 text-sm">{pile.description}</p>}
-              {pile.location && (
+{pile.location && (
   <p className="mt-1 font-mono text-xs text-commons-teal">📍 {pile.location}</p>
 )}
+
+<span
+  className={`commons-stamp mt-2 inline-block ${
+    pile.status === "claimed_pending" ? "commons-stamp-brick" : "commons-stamp-teal"
+  }`}
+>
+  {pile.status === "claimed_pending" ? "claimed — awaiting confirmation" : "still there"}
+</span>
+
 {pile.latitude != null && pile.longitude != null && (
-  <>
+  <div className="mt-2">
     <button
       onClick={() => toggleMap(pile.id)}
-      className="mt-1 font-mono text-[10px] font-bold underline"
+      className="font-mono text-[10px] font-bold underline"
     >
       {expandedMapIds.has(pile.id) ? "hide map" : "view on map"}
     </button>
@@ -150,16 +159,8 @@ function toggleMap(pileId: string) {
         <PileMapPreview lat={pile.latitude} lng={pile.longitude} />
       </div>
     )}
-  </>
+  </div>
 )}
-
-              <span
-                className={`commons-stamp mt-2 inline-block ${
-                  pile.status === "claimed_pending" ? "commons-stamp-brick" : "commons-stamp-teal"
-                }`}
-              >
-                {pile.status === "claimed_pending" ? "claimed — awaiting confirmation" : "still there"}
-              </span>
 
               <div className="mt-3 flex flex-wrap gap-2">
                 {pile.status === "still_there" && (

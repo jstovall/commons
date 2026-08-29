@@ -31,10 +31,10 @@ export default function PileMapPreview({ lat, lng }: { lat: number; lng: number 
   }, [lat, lng]);
 
   return (
-    <div
-      ref={containerRef}
-      style={{ height: "160px", width: "100%" }}
-      className="rounded-md border-2 border-commons-ink"
-    />
-  );
+  <div
+    ref={containerRef}
+    style={{ height: "160px", width: "100%", backgroundColor: "#F7F0DE" }}
+    className="rounded-md"
+  />
+);
 }

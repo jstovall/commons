@@ -50,10 +50,10 @@ const map = L.map(containerRef.current).setView([safeLat, safeLng], 16);
   }, []);
 
   return (
-    <div
-      ref={containerRef}
-      style={{ height: "220px", width: "100%" }}
-      className="rounded-md border-2 border-commons-ink"
-    />
-  );
+  <div
+    ref={containerRef}
+    style={{ height: "220px", width: "100%", backgroundColor: "#F7F0DE" }}
+    className="rounded-md"
+  />
+);
 }
