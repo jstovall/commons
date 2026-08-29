@@ -40,11 +40,14 @@ async function handleRawFile(file: File) {
   }
 }
 
-  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
-    e.preventDefault();
-    const formData = new FormData(e.currentTarget);
-    formData.set("latitude", String(location.lat));
-    formData.set("longitude", String(location.lng));
+function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+  e.preventDefault();
+  const formData = new FormData(e.currentTarget);
+
+  const safeLat = Number.isFinite(location.lat) ? location.lat : FALLBACK_CENTER.lat;
+  const safeLng = Number.isFinite(location.lng) ? location.lng : FALLBACK_CENTER.lng;
+  formData.set("latitude", String(safeLat));
+  formData.set("longitude", String(safeLng));
 
     startTransition(async () => {
       await createFreePile(formData);

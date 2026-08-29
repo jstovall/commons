@@ -1080,9 +1080,10 @@ export async function createFreePile(formData: FormData) {
     imageUrl = publicUrlData.publicUrl;
   }
 
-  const latitude = formData.get("latitude") ? parseFloat(formData.get("latitude") as string) : null;
-const longitude = formData.get("longitude") ? parseFloat(formData.get("longitude") as string) : null;
-
+const rawLat = parseFloat(formData.get("latitude") as string);
+const rawLng = parseFloat(formData.get("longitude") as string);
+const latitude = Number.isFinite(rawLat) ? rawLat : null;
+const longitude = Number.isFinite(rawLng) ? rawLng : null;
 const { error } = await supabase.from("free_piles").insert({
   id: pileId,
   neighborhood_id: membership.neighborhood_id,
