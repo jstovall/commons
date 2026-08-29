@@ -304,12 +304,33 @@ body {
 
 /* ---------- Nav slide transitions ---------- */
 
+/* Pull the header into its own transition layer so it never
+   participates in the slide — since its content never actually
+   changes between old/new states, this makes it appear perfectly
+   static rather than sliding along with the rest of the screen. */
+#app-header {
+  view-transition-name: app-header;
+}
+
+::view-transition-group(app-header) {
+  animation: none;
+}
+#app-bottom-nav {
+  view-transition-name: app-bottom-nav;
+}
+
+::view-transition-group(app-bottom-nav) {
+  animation: none;
+}
+
+
+
 ::view-transition-old(root),
 ::view-transition-new(root) {
   animation-duration: 0.28s;
   animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
 }
-
+a
 html[data-transition-direction="forward"]::view-transition-old(root) {
   animation-name: commons-slide-out-left;
 }

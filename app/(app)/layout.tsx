@@ -10,6 +10,7 @@ import OceanWaves from "./OceanWaves";
 import RefreshOnFocus from "./RefreshOnFocus";
 import ViewportFix from "./ViewportFix";
 import ProfileSun from "./ProfileSun";
+import HeaderHeightObserver from "./HeaderHeightObserver";
 
 export default async function AppLayout({
   children,
@@ -51,9 +52,11 @@ const neighborhoodName = current.neighborhood?.name;
   return (
     <div className="min-h-screen pb-24">
         <StandaloneTracker />
+        <RefreshOnFocus />
+        <HeaderHeightObserver />
   <AddToHomeScreenBanner />
   <NotificationsPromptBanner />
-<header className="relative overflow-hidden bg-commons-teal">
+<header id="app-header" className="relative overflow-hidden bg-commons-teal">
   <div className="relative px-5 pb-3 pt-4 text-center">
     <div className="absolute left-2 top-1/2 -translate-y-1/2">
       <ProfileSun initials={initials} />

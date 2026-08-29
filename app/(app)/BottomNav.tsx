@@ -93,24 +93,28 @@ export default function BottomNav({ isAdmin }: { isAdmin?: boolean }) {
   return (
     <>
       {pending && (
-        <div className="fixed inset-0 z-[60] flex flex-col items-center justify-center bg-commons-teal">
-          <span className="commons-heading text-5xl text-commons-cream">
-            {pending.label}
-          </span>
-          <span className="mt-2 font-mono text-xs uppercase tracking-widest text-commons-cream/70">
-            loading…
-          </span>
-        </div>
-      )}
+  <div
+    className="fixed inset-x-0 bottom-0 z-[60] flex flex-col items-center justify-center bg-[#E0DACC]"
+    style={{ top: "var(--app-header-height, 0px)" }}
+  >
+    <span className="commons-heading text-5xl text-commons-teal">
+      {pending.label}
+    </span>
+    <span className="mt-2 font-mono text-xs uppercase tracking-widest text-commons-teal/70">
+      loading…
+    </span>
+  </div>
+)}
 
-      <nav
-        className="fixed inset-x-0 bottom-0 border-t-2 border-commons-ink bg-commons-card"
-        style={{
-          paddingBottom: "env(safe-area-inset-bottom)",
-          paddingLeft: "env(safe-area-inset-left)",
-          paddingRight: "env(safe-area-inset-right)",
-        }}
-      >
+     <nav
+  id="app-bottom-nav"
+  className="fixed inset-x-0 bottom-0 z-[70] border-t-2 border-commons-ink bg-commons-card"  
+  style={{
+    paddingBottom: "env(safe-area-inset-bottom)",
+    paddingLeft: "env(safe-area-inset-left)",
+    paddingRight: "env(safe-area-inset-right)",
+  }}
+>
         <div className="relative">
           <button
             type="button"

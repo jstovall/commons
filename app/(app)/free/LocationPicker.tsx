@@ -19,8 +19,8 @@ export default function LocationPicker({
   useEffect(() => {
     if (!containerRef.current) return;
 
-    const safeLat = Number.isFinite(initialLat) ? initialLat : 47.2529;
-const safeLng = Number.isFinite(initialLng) ? initialLng : -122.4443;
+    const safeLat = Number.isFinite(initialLat) ? initialLat : 47.249346;
+const safeLng = Number.isFinite(initialLng) ? initialLng : -122.480673;
 const map = L.map(containerRef.current).setView([safeLat, safeLng], 16);
 
     L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
