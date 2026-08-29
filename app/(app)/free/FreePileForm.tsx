@@ -23,7 +23,8 @@ export default function FreePileForm() {
   const [locationNote, setLocationNote] = useState<string | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
 
-  async function handleRawFile(file: File) {
+async function handleRawFile(file: File) {
+  try {
     const gps = await extractGpsFromFile(file);
     if (gps) {
       setLocation(gps);
@@ -32,7 +33,12 @@ export default function FreePileForm() {
     } else {
       setLocationNote(null);
     }
+  } catch (err) {
+    setLocationNote(
+      `EXIF read failed: ${err instanceof Error ? err.message : String(err)}`
+    );
   }
+}
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
