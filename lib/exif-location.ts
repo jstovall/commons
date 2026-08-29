@@ -9,9 +9,9 @@ export async function extractGpsFromFile(
     const { gps } = await import("exifr");
     const result = await gps(file);
     if (!result) return null;
-    const { latitude, longitude } = result;
-    if (typeof latitude !== "number" || typeof longitude !== "number") return null;
-    return { lat: latitude, lng: longitude };
+const { latitude, longitude } = result;
+if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+return { lat: latitude, lng: longitude };
   } catch {
     return null;
   }
