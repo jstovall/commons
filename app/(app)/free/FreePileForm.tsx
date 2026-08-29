@@ -79,11 +79,12 @@ function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
           className="commons-input text-sm"
         />
         <ImageFileInput
-          key={formKey}
-          name="image_file"
-          label="Photo (optional)"
-          onRawFile={handleRawFile}
-        />
+  key={formKey}
+  name="image_file"
+  label="Take a picture (optional)"
+  onRawFile={handleRawFile}
+  capture="environment"
+/>
 
         <label className="font-mono text-xs font-bold uppercase">
           Pin the location

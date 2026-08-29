@@ -39,10 +39,12 @@ export default function ImageFileInput({
   name,
   label,
   onRawFile,
+  capture,
 }: {
   name: string;
   label: string;
   onRawFile?: (file: File) => void;
+  capture?: "user" | "environment";
 }) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [status, setStatus] = useState<string | null>(null);
@@ -77,13 +79,14 @@ async function handleChange(e: React.ChangeEvent<HTMLInputElement>) {
     <label className="font-mono text-xs font-bold uppercase">
       {label}
       <input
-        ref={inputRef}
-        type="file"
-        name={name}
-        accept="image/*"
-        onChange={handleChange}
-        className="commons-input mt-1 w-full text-sm font-body normal-case"
-      />
+  ref={inputRef}
+  type="file"
+  name={name}
+  accept="image/*"
+  capture={capture}
+  onChange={handleChange}
+  className="commons-input mt-1 w-full text-sm font-body normal-case"
+/>
       {status && (
         <p className="mt-1 font-mono text-[10px] normal-case text-commons-teal">
           {status}
