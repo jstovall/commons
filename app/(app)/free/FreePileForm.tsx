@@ -86,14 +86,12 @@ function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
   capture="environment"
 />
 
-        <label className="font-mono text-xs font-bold uppercase">
-          Pin the location
-          {locationNote && (
-            <p className="mt-1 font-mono text-[10px] font-normal normal-case text-commons-teal">
-              {locationNote}
-            </p>
-          )}
-          <div className="mt-1">
+<label className="font-mono text-xs font-bold uppercase">
+  Pin the location
+  <p className="mt-1 font-mono text-[10px] font-normal normal-case text-commons-ink/70">
+    {locationNote ?? "Tap the map to mark where this is — drag the pin to adjust."}
+  </p>
+  <div className="mt-1">
             <LocationPicker
               key={mapKey}
               initialLat={location.lat}
