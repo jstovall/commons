@@ -4,6 +4,7 @@ import { getCurrentMembership } from "@/lib/current-neighborhood";
 import { updateProfile, signOutAction, switchNeighborhood } from "@/app/actions";
 import NotificationsToggle from "./NotificationsToggle";
 import ShareInviteLink from "./ShareInviteLink";
+import NotificationChannelToggle from "./NotificationChannelToggle";
 
 export default async function ProfilePage() {
   const supabase = await createClient();
@@ -14,11 +15,17 @@ export default async function ProfilePage() {
 
   const { data: profile } = await supabase
     .from("profiles")
-    .select("display_name")
+    .select("display_name, notification_channel")
     .eq("id", user.id)
     .maybeSingle();
 
 const { memberships, current } = await getCurrentMembership(user.id);
+
+const { data: pushSub } = await supabase
+  .from("push_subscriptions")
+  .select("id")
+  .eq("user_id", user.id)
+  .maybeSingle();
 
 const { data: currentNeighborhood } = current
   ? await supabase
@@ -113,6 +120,10 @@ const { data: currentNeighborhood } = current
   />
 )}
 <NotificationsToggle />
+<NotificationChannelToggle
+  currentChannel={profile?.notification_channel ?? "email"}
+  isInstalledAndSubscribed={Boolean(pushSub)}
+/>
 <a
   href="/feedback"
   className="commons-button commons-button-secondary self-start text-sm"

@@ -21,6 +21,55 @@ export async function POST(request: NextRequest) {
   }
 
   const admin = createAdminClient();
+
+  const { data: channelData } = await admin.rpc("get_channel_and_email", {
+    _user_id: notification.user_id,
+  });
+  const channel = channelData?.[0]?.channel ?? "email";
+  const recipientEmail = channelData?.[0]?.email;
+
+  if (channel === "off") {
+    return NextResponse.json({ sent: 0, channel: "off" });
+  }
+
+  if (channel === "email") {
+    if (!recipientEmail) {
+      return NextResponse.json({ sent: 0, channel: "email", error: "no email found" });
+    }
+
+    const { buildNotificationEmailHtml } = await import("@/lib/notification-email");
+    const html = buildNotificationEmailHtml({
+      title: notification.title,
+      body: notification.body ?? "",
+      linkUrl: `https://www.tacoma-commons.com${notification.link_url ?? "/browse"}`,
+    });
+
+    try {
+      const res = await fetch("https://api.resend.com/emails", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.RESEND_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          from: '"Commons" <noreply@tacoma-commons.com>',
+          to: [recipientEmail],
+          subject: notification.title,
+          html,
+        }),
+      });
+      if (!res.ok) {
+        console.error("Notification email send failed:", await res.text());
+        return NextResponse.json({ sent: 0, channel: "email" });
+      }
+      return NextResponse.json({ sent: 1, channel: "email" });
+    } catch (err) {
+      console.error("Notification email error:", err);
+      return NextResponse.json({ sent: 0, channel: "email" });
+    }
+  }
+
+  // channel === "push" — existing behavior, unchanged below
   const { data: subscriptions } = await admin
     .from("push_subscriptions")
     .select("id, endpoint, p256dh, auth")

@@ -61,6 +61,12 @@ if (data.user && code) {
   } catch (err) {
     console.error("preJoinNeighborhood call failed:", err);
   }
+  if (data.user && (e.currentTarget as HTMLFormElement).email_notifications instanceof HTMLInputElement) {
+  const wantsEmail = (e.currentTarget as HTMLFormElement).email_notifications.checked;
+  if (!wantsEmail) {
+    await supabase.from("profiles").update({ notification_channel: "off" }).eq("id", data.user.id);
+  }
+}
 }
 
     setLoading(false);
@@ -139,7 +145,15 @@ if (checkEmail) {
           />
 
           {error && <p className="font-mono text-xs text-commons-brick">{error}</p>}
-
+<label className="flex items-center gap-2 text-sm">
+  <input
+    type="checkbox"
+    name="email_notifications"
+    defaultChecked
+    className="h-4 w-4 border-2 border-commons-ink"
+  />
+  Email me when something needs my attention
+</label>
           <button type="submit" disabled={loading} className="commons-button text-sm disabled:opacity-50">
             {loading ? "Creating account…" : "Create account"}
           </button>

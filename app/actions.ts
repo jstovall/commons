@@ -1099,6 +1099,13 @@ const { error } = await supabase.from("free_piles").insert({
   revalidatePath("/free", "page");
 }
 
+export async function updateNotificationChannel(channel: string) {
+  const { supabase, user } = await requireActiveMembership();
+  await supabase.from("profiles").update({ notification_channel: channel }).eq("id", user.id);
+  revalidatePath("/profile", "page");
+}
+
+
 export async function updateFreePileStatus(formData: FormData) {
   const { supabase } = await requireActiveMembership();
   const pileId = formData.get("pile_id") as string;
